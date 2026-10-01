@@ -2,7 +2,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import matter from 'gray-matter';
 import {load as loadYaml} from 'js-yaml';
-import planned from '@/content/planned.json';
 
 const CONTENT = path.join(process.cwd(), 'content');
 
@@ -40,8 +39,6 @@ export type LinkItem = {
 };
 
 export type LinkGroup = {category: string; items: LinkItem[]};
-
-export type PlannedTopic = {title: string; description: string; icon: string};
 
 // YAML parses bare dates into Date objects
 const toDate = (v: unknown) => (v instanceof Date ? v.toISOString().slice(0, 10) : String(v ?? ''));
@@ -128,8 +125,6 @@ export function getLinkGroups(): LinkGroup[] {
     items: g.items.map((i) => ({...i, host: new URL(i.url).hostname.replace(/^www\./, '')})),
   }));
 }
-
-export const getPlannedTopics = (): PlannedTopic[] => planned;
 
 export function formatDate(date: string) {
   return new Date(date).toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: 'numeric'});

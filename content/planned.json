@@ -1,8 +1,0 @@
-[
-  {"title": "Deployment to GitHub Pages", "icon": "github", "description": "Publish a website for free, without a domain and with minimal effort — using a React/Next.js app as the example."},
-  {"title": "Deployment to Firebase", "icon": "flame", "description": "Another free hosting option: deploying a site to Google Firebase."},
-  {"title": "Jenkins Agent", "icon": "server", "description": "Installing Jenkins on local Docker and deploying through a Jenkins agent in a Vagrant environment."},
-  {"title": "Serverless framework", "icon": "cloud", "description": "Deploying AWS Lambda functions with a non-standard stack: PHP 8 + Bref."},
-  {"title": "Ansible", "icon": "settings", "description": "Ansible as a tool for deploying projects."},
-  {"title": "AWS Glue", "icon": "database", "description": "Using AWS Glue to generate XML reports on big data."}
-]

@@ -11,7 +11,6 @@ Every push to `main` is built and deployed by `.github/workflows/deploy.yml`. Co
 | News / notes | `content/news/<yyyy-mm-dd>-<slug>.mdx` | MDX with frontmatter, URL `/news/<slug>/` |
 | Videos | `content/videos.yaml` | list of entries |
 | Links | `content/links.yaml` | categories with items |
-| Planned guides | `content/planned.json` | title, description, icon |
 
 ### Guide / news frontmatter
 ```yaml

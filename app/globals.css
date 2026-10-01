@@ -754,17 +754,6 @@ a.card:hover,
   margin-right: 4px;
 }
 
-.planned-card {
-  border-style: dashed;
-  box-shadow: none;
-  background: transparent;
-}
-
-.planned-card .topic-tile {
-  color: var(--text-faint);
-  background: var(--bg-subtle);
-}
-
 .split {
   display: grid;
   grid-template-columns: 1fr 1fr;
