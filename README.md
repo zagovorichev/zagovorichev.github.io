@@ -42,5 +42,6 @@ npm run build      # static site in ./out
 
 ## Deploy
 
-`.github/workflows/deploy.yml` builds every push and pull request; pushes to `main` are published to GitHub Pages.
-In the repository settings, **Settings → Pages → Build and deployment → Source** must be set to **GitHub Actions**.
+`.github/workflows/deploy.yml` builds every push and pull request; pushes to `main` are built and
+published to the `gh-pages` branch, which GitHub Pages serves (**Settings → Pages → Deploy from a branch → gh-pages**).
+No manual `npm run deploy` is needed anymore.

@@ -22,24 +22,31 @@ jobs:
       - run: npm run lint
       - run: npm run build
       - if: github.event_name != 'pull_request'
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-artifact@v4
         with:
+          name: site
           path: out
 
-  # Publishes only from main; pull requests just get the build check above.
+  # Publishes the static build to the gh-pages branch, which GitHub Pages already serves,
+  # so no change in repository settings is needed. Pull requests only run the build above.
   deploy:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: build
     runs-on: ubuntu-latest
     permissions:
-      pages: write
-      id-token: write
+      contents: write
     concurrency:
       group: pages
       cancel-in-progress: false
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: site
+          path: out
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./out
+          # adds .nojekyll so Pages serves the _next/ folder
+          enable_jekyll: false
