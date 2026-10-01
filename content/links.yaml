@@ -28,6 +28,14 @@
       description: My example setup of Traefik + Portainer + WhoAmI for local Docker development.
       guide: traefik
 
+- category: Software architecture
+  items:
+    - title: "Explicit Architecture: DDD, Hexagonal, Onion, Clean, CQRS — how I put it all together"
+      url: https://herbertograca.com/2017/11/16/explicit-architecture-01-ddd-hexagonal-onion-clean-cqrs-how-i-put-it-all-together/
+      description: Herberto Graça's article that combines DDD, Ports & Adapters, Onion, Clean Architecture and CQRS into one explicit model.
+      note: An article I love. My short version with diagrams is in the guides, for when I just need to refresh the memory.
+      guide: explicit-architecture
+
 - category: Process & methodology
   items:
     - title: The Scrum Guide

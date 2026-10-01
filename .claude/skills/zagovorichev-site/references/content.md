@@ -37,7 +37,8 @@ Body rules:
 - Fenced code blocks **with a language** (`bash`, `ts`, `yaml`, `php`, …) get syntax highlighting
   (rehype-pretty-code, themes github-light / github-dark-dimmed).
 - GFM works: tables, task lists, autolinks, strikethrough.
-- Custom MDX component: `<Muted>…</Muted>`. External links open in a new tab automatically;
+- Custom MDX components: `<Muted>…</Muted>` and `<Diagram name="…" />` — a theme-aware SVG diagram
+  drawn in code (see design-system.md → Diagrams). External links open in a new tab automatically;
   internal links (`/guides/zsh/`) use client navigation. Images open full-size on click.
 - In MDX, `{` `}` `<` `>` in plain text must be escaped (`\{`) or put in `code`.
 

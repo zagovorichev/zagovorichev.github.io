@@ -86,6 +86,21 @@ Breakpoints used: 1000px, 900px (mobile menu), 820px (hero stacks), 760px, 560px
 - **UI glyphs and topic icons**: `lucide-react`, size 14–22, strokeWidth 1.75. Lucide has no brand
   logos — the GitHub mark is a custom `GitHubMark`.
 
+## Diagrams in articles
+
+Prefer diagrams drawn as React SVG components over image files: they use the tokens, so they switch with
+the theme. Pattern: `components/diagrams/<Topic>.tsx` exports one component per figure (`<figure
+className="diagram">` → `.diagram-scroll` → `<svg viewBox=…>` → `<figcaption>`) plus a name→component map;
+register the map in `components/mdx-components.tsx` (`diagrams`), then use `<Diagram name="…" />` in MDX.
+
+- Colors by meaning: domain/core = `--c-guides`, application = `--c-links`, driving/UI = `--c-about`,
+  infrastructure/driven = `--c-news`, events/warnings = `--c-videos`; neutral boxes `--surface` +
+  `--border-strong`. Text classes: `dg-title`, `dg-sub`, `dg-heading`, `dg-label`, `dg-on-solid`.
+- CSS classes win over SVG `fill` attributes — use `style={{fill: …}}` to recolor a classed text.
+- Unique marker ids per diagram (`id` prefix), `role="img"` + a descriptive `aria-label`.
+- Keep the viewBox ~760 wide; `.diagram svg` has `min-width: 620px` and scrolls horizontally on phones.
+- Check every diagram in light and dark (element screenshots) for overlapping labels and text overflow.
+
 ## Adding a new section (checklist)
 
 1. Content source in `content/` + loader in `lib/content.ts`.

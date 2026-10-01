@@ -1352,6 +1352,68 @@ a.card:hover,
   margin: 2.5em 0;
 }
 
+.diagram {
+  margin: 2em 0;
+}
+
+.diagram-scroll {
+  overflow-x: auto;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.diagram svg {
+  display: block;
+  width: 100%;
+  min-width: 620px;
+  height: auto;
+  font-family: var(--font-body);
+}
+
+.diagram figcaption {
+  margin-top: 10px;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  text-align: center;
+}
+
+.dg-title {
+  fill: var(--text);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.dg-on-solid {
+  fill: var(--bg);
+  font-size: 14px;
+}
+
+.dg-sub {
+  fill: var(--text-muted);
+  font-size: 11px;
+}
+
+.dg-heading {
+  fill: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.dg-label {
+  fill: var(--text-muted);
+  font-size: 11px;
+  font-style: italic;
+}
+
+.dg-x {
+  fill: var(--c-videos);
+  font-size: 22px;
+  font-weight: 700;
+}
+
 .zoom-trigger {
   display: block;
   margin: 1.5em 0;

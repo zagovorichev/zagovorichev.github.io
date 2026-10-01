@@ -1,0 +1,145 @@
+---
+title: "Explicit Architecture — the short version"
+subtitle: "DDD, Hexagonal, Onion, Clean and CQRS in one picture"
+description: "A memory refresher for Herberto Graça's Explicit Architecture: application core, ports and adapters, layers, components, events and the flow of control — with diagrams."
+icon: network
+tags: [architecture, ddd]
+date: 2026-10-01
+---
+
+A compact summary of one of my favourite architecture articles —
+[**"DDD, Hexagonal, Onion, Clean, CQRS, … How I put it all together"**](https://herbertograca.com/2017/11/16/explicit-architecture-01-ddd-hexagonal-onion-clean-cqrs-how-i-put-it-all-together/)
+by **Herberto Graça** (2017). The original is long and worth reading in full; this page is for
+remembering what is inside. Diagrams are my own.
+
+> **The idea in one sentence:** take the compatible parts of DDD, Ports & Adapters, Onion, Clean
+> Architecture and CQRS, and organise the code so the architecture is *explicit* — visible in the
+> structure of the codebase, not only in a diagram on a wiki.
+
+## 1. Three building blocks
+
+Every application has the same three parts:
+
+- **Application core** — the code that is the reason the application exists: use cases and business
+  rules.
+- **Delivery mechanisms** — how the outside world *uses* the application: web UI, REST API, CLI,
+  message consumers.
+- **Tools** — what the application *uses*: database, search engine, cache, mailer, message queue,
+  third-party APIs.
+
+The core must not depend on either of the other two. Everything else in the article follows from that.
+
+<Diagram name="ea-big-picture" />
+
+## 2. Ports and adapters
+
+The core talks to the outside world only through **ports**, and the outside world plugs into ports
+with **adapters**.
+
+- **Port** — an interface (sometimes plus the DTOs it uses) that **belongs to the core** and is shaped
+  by the core's needs, not by a tool's API.
+- **Primary (driving) adapter** — wraps a delivery mechanism and **uses** a port to tell the core what
+  to do: controllers, console commands, queue consumers. It translates the outside request into a call
+  to the core.
+- **Secondary (driven) adapter** — wraps a tool and **implements** a port the core depends on:
+  repositories, search, mail, messaging. The core tells it what to do.
+
+On the driven side this is plain dependency inversion: the core declares `UserRepository`, the
+infrastructure provides `SqlUserRepository`, and the dependency still points at the core. Swapping the
+database, or replacing it with an in-memory fake in tests, means writing another adapter — the core does
+not change.
+
+<Diagram name="ea-ports-adapters" />
+
+## 3. Inside the core: layers (Onion / Clean)
+
+The core itself is layered, and dependencies point inwards only.
+
+**Application layer** — the use cases.
+
+- *Application services* and/or *command handlers*. A use case typically: loads entities through a
+  repository → asks them (or domain services) to do the domain work → persists them → dispatches
+  events.
+- Holds the **ports** for tools (repository, search, messaging interfaces).
+- Triggers **application events** — side effects of a use case such as sending an email or notifying
+  another system.
+- Contains **no business rules** itself: it orchestrates.
+
+**Domain layer** — the business rules.
+
+- **Domain services** — domain logic that involves several entities or does not naturally belong to
+  one. Not to be confused with application services: they know nothing about use cases or transactions.
+- **Domain model** — entities, value objects, enums and **domain events**: the state and the rules that
+  protect it. The innermost circle depends on nothing.
+
+## 4. Components: slicing the other way
+
+Layers cut the code horizontally. Real systems also need **vertical** boundaries around business
+capabilities — *Billing*, *Users*, *Reviews* — what DDD calls bounded contexts. The article calls them
+**components** and recommends *package by component* on top of the layers.
+
+<Diagram name="ea-components" />
+
+The point is **decoupling** between components:
+
+- **No direct calls.** A component does not reference another component's classes.
+- **Triggering logic elsewhere** happens with **events**: *Users* dispatches `UserRegistered`, *Billing*
+  listens and creates an account. Sender and listener do not know each other.
+- **Shared kernel** — the only code components share: event classes, a few common value types, maybe
+  specifications. Keep it small; it is a dependency of everyone.
+- **Getting data from another component** has two options:
+  1. **shared storage, read-only** — a component may *query* another component's data but never
+     changes it;
+  2. **own copy** — each component keeps the data it needs, updated through events (eventual
+     consistency), which also allows separate storage per component.
+
+## 5. Flow of control and CQRS
+
+<Diagram name="ea-flow-of-control" />
+
+**Commands** change state and return nothing:
+
+1. a primary adapter (controller) turns the request into a **command** — a simple DTO;
+2. either it calls an **application service** directly, or it puts the command on a **command bus**,
+   which routes it to exactly one **command handler**;
+3. the handler loads entities through repository ports, lets the domain do its work, persists the
+   result;
+4. **events** are dispatched; listeners in this or other components react.
+
+**Queries** return data and change nothing. They do not need the domain model at all: a **query
+object/service** reads straight from the storage (or a read model) and returns a **DTO / view model**
+for the template or JSON response. Splitting the two paths is **CQRS**: rich behaviour on the write side,
+simple fast reads on the read side.
+
+## Cheat sheet: where does it go?
+
+| Thing | Lives in |
+|---|---|
+| HTTP controller, CLI command, queue consumer | primary adapter |
+| `UserRepository` interface | application core (port) |
+| `SqlUserRepository`, mailer, search client | secondary adapter |
+| use-case orchestration, transactions | application layer (service or command handler) |
+| rule spanning several entities | domain service |
+| invariants of one concept | entity / value object |
+| "something happened" inside the domain | domain event |
+| side effect of a use case (email, notify) | application event + listener |
+| read-only screen data | query service → DTO (CQRS read side) |
+| code shared by components | shared kernel — as little as possible |
+
+## Rules of thumb
+
+- Dependencies point **inwards**: adapters → application layer → domain.
+- The core defines interfaces in **its own language**; tools adapt to the core, not the other way round.
+- One use case = one application service method or one command handler.
+- Components talk through **events**, not through each other's classes.
+- Reads may skip the domain; writes may not.
+- Make the structure of the code show all of the above — that is what *explicit* means.
+
+## Read the original
+
+This is a summary for quick recall; the full article explains the reasoning, the history of each idea
+and the trade-offs much better:
+
+- **[Explicit Architecture #01: DDD, Hexagonal, Onion, Clean, CQRS, … How I put it all together](https://herbertograca.com/2017/11/16/explicit-architecture-01-ddd-hexagonal-onion-clean-cqrs-how-i-put-it-all-together/)**
+  — Herberto Graça
+- More from the same series and blog: [herbertograca.com](https://herbertograca.com/)

@@ -2,6 +2,7 @@ import type {ComponentPropsWithoutRef} from 'react';
 import type {MDXComponents} from 'mdx/types';
 import Link from 'next/link';
 import ZoomImage from './ZoomImage';
+import {explicitArchitectureDiagrams} from './diagrams/ExplicitArchitecture';
 
 /** Secondary explanatory text, e.g. `- Term. <Muted>explanation</Muted>` */
 function Muted({children}: {children: React.ReactNode}) {
@@ -19,8 +20,18 @@ function Img({src, alt = ''}: ComponentPropsWithoutRef<'img'>) {
   return typeof src === 'string' ? <ZoomImage src={src} alt={alt} /> : null;
 }
 
+const diagrams = {...explicitArchitectureDiagrams};
+
+/** Theme-aware SVG diagram drawn in code: `<Diagram name="ea-big-picture" />` */
+function Diagram({name}: {name: keyof typeof diagrams}) {
+  const Component = diagrams[name];
+  if (!Component) throw new Error(`Unknown diagram "${name}"`);
+  return <Component />;
+}
+
 export const mdxComponents: MDXComponents = {
   a: Anchor,
   img: Img,
   Muted,
+  Diagram,
 };
