@@ -9,14 +9,14 @@ export default function PostLayout({
   post,
   children,
 }: {
-  section: Extract<SectionKey, 'guides' | 'news'>;
+  section: Extract<SectionKey, 'guides' | 'news' | 'claude'>;
   post: Post;
   children: React.ReactNode;
 }) {
   return (
     <article className="container post" data-section={section}>
       <Link href={sections[section].href} className="back-link">
-        <ArrowLeft size={16} /> All {sections[section].title.toLowerCase()}
+        <ArrowLeft size={16} /> {section === 'claude' ? 'All Claude articles' : `All ${sections[section].title.toLowerCase()}`}
       </Link>
       <header className="post-header">
         {section === 'guides' ? (

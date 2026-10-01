@@ -7,7 +7,7 @@ by GitHub Actions on every push to `main`. English only.
 sections and content formats, design system, deployment and verification scripts.
 
 Quick map:
-- Content: `content/guides/*.mdx`, `content/news/*.mdx`, `content/videos.yaml`, `content/links.yaml`
+- Content: `content/guides/*.mdx`, `content/claude/*.mdx` (anonymized!), `content/news/*.mdx`, `content/videos.yaml`, `content/links.yaml`
 - Pages: `app/`, components: `components/`, styles and tokens: `app/globals.css`, site config: `lib/site.ts`
 - Before pushing: `bash .claude/skills/zagovorichev-site/scripts/verify.sh`
 

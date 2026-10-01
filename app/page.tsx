@@ -2,12 +2,13 @@ import Link from 'next/link';
 import {ArrowRight} from 'lucide-react';
 import {HeroTree, SectionTile} from '@/components/icons';
 import {GuideCard, LinkCard, NewsItem, VideoCard} from '@/components/cards';
-import {getGuides, getLinkGroups, getNews, getVideos} from '@/lib/content';
+import {getClaudePosts, getGuides, getLinkGroups, getNews, getVideos} from '@/lib/content';
 import {sections, site, type SectionKey} from '@/lib/site';
 
 export default function Home() {
   const guides = getGuides();
   const news = getNews();
+  const claudePosts = getClaudePosts();
   const videos = getVideos();
   const linkGroups = getLinkGroups();
   const links = linkGroups.flatMap((g) => g.items);
@@ -15,6 +16,7 @@ export default function Home() {
 
   const counts: Record<Exclude<SectionKey, 'about'>, string> = {
     guides: `${guides.length} guides`,
+    claude: claudePosts.length ? `${claudePosts.length} ${claudePosts.length === 1 ? 'article' : 'articles'}` : 'Coming soon',
     videos: videos.length ? `${videos.length} videos` : 'Coming soon',
     links: `${links.length} links`,
     news: `${news.length} ${news.length === 1 ? 'note' : 'notes'}`,

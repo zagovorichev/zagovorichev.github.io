@@ -16,7 +16,7 @@ const isUrl = (v) => {
 };
 
 const guides = new Set();
-for (const dir of ['guides', 'news']) {
+for (const dir of ['guides', 'news', 'claude']) {
   const full = path.join(root, 'content', dir);
   for (const file of fs.readdirSync(full).filter((f) => f.endsWith('.mdx'))) {
     const where = `content/${dir}/${file}`;
@@ -25,6 +25,8 @@ for (const dir of ['guides', 'news']) {
     for (const key of ['title', 'description', 'date']) if (!data[key]) errors.push(`${where}: missing ${key}`);
     if (data.date && !isDate(data.date)) errors.push(`${where}: date must be YYYY-MM-DD`);
     if (data.tags && !Array.isArray(data.tags)) errors.push(`${where}: tags must be a list`);
+    if (dir === 'claude' && !['claude-md', 'skill', 'command', 'hook', 'workflow'].includes(data.kind))
+      errors.push(`${where}: kind must be claude-md | skill | command | hook | workflow`);
     if (dir === 'guides') guides.add(file.replace(/\.mdx$/, ''));
   }
 }

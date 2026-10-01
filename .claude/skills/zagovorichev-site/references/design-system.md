@@ -37,6 +37,7 @@ Section hues (`--c-<section>` and `--c-<section>-soft`):
 | Section | Light | Dark |
 |---|---|---|
 | guides | `#0b7a5d` | `#2fbf93` |
+| claude | `#0e7490` | `#3cc7e0` |
 | videos | `#d6334a` | `#ff6b81` |
 | links | `#2563eb` | `#6a9cff` |
 | news | `#b86200` | `#f2a541` |

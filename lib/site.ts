@@ -12,13 +12,18 @@ export const site = {
   gaId: process.env.NEXT_PUBLIC_GA_ID,
 };
 
-export type SectionKey = 'guides' | 'videos' | 'links' | 'news' | 'about';
+export type SectionKey = 'guides' | 'claude' | 'videos' | 'links' | 'news' | 'about';
 
 export const sections: Record<SectionKey, {title: string; href: string; blurb: string}> = {
   guides: {
     title: 'Guides',
     href: '/guides/',
     blurb: 'Step-by-step instructions for problems I have solved — tooling, process, quality.',
+  },
+  claude: {
+    title: 'Claude',
+    href: '/claude/',
+    blurb: 'How I develop with Claude Code: project instructions, skills, hooks and gated workflows.',
   },
   videos: {
     title: 'Videos',
@@ -42,4 +47,4 @@ export const sections: Record<SectionKey, {title: string; href: string; blurb: s
   },
 };
 
-export const navOrder: SectionKey[] = ['guides', 'videos', 'links', 'news', 'about'];
+export const navOrder: SectionKey[] = ['guides', 'claude', 'videos', 'links', 'news', 'about'];

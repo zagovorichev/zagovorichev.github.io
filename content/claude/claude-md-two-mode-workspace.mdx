@@ -1,0 +1,197 @@
+---
+title: "CLAUDE.md for a two-mode workspace: discovery and gated delivery"
+description: "A walkthrough of a production CLAUDE.md that switches Claude between read-only architecture discovery of legacy code and ticket-driven development behind approval gates, with hooks that enforce the rules."
+kind: claude-md
+order: 1
+tags: [claude-md, workflow, hooks]
+date: 2026-10-01
+---
+
+`CLAUDE.md` is the file Claude Code reads at the start of every session in a repository. Most examples
+online are a list of build commands and style preferences. This one is different: it is an **operating
+manual** for a workspace where Claude does two very different jobs, and it is written so that the rules
+are checkable — by Claude itself, by state files and by hooks that block a write before it happens.
+
+> The project, its repositories and its domain are anonymized. Directory and command names below are
+> placeholders; the structure and the rules are real.
+
+## The workspace
+
+One outer workspace contains three kinds of things:
+
+| Kind | Example | Status for Claude |
+|---|---|---|
+| Legacy repositories under reverse engineering | three old services | read-only, always |
+| New services under active development | a data-collection service and a mock of its upstream sources | writable **only** inside an approved ticket plan |
+| Workspace tooling and knowledge | `analysis/`, `docs/`, `graphs/`, `.claude/` | always writable |
+
+Each new service is its own nested git repository. That matters: a ticket plan names the repository
+that owns the code, and baselines, diffs and scope checks all run inside that repository. The outer
+workspace holds only tooling, documentation, architecture artifacts and per-ticket bookkeeping — never
+application code.
+
+## Two modes, decided by a file — not by the conversation
+
+The first section tells Claude to establish the active mode **before doing anything**:
+
+- **Architecture discovery** — build an evidence-based model of the legacy code. Reverse engineering only:
+  no refactoring, no fixes, no optimizations, no new behavior, no migration proposals unless asked.
+- **Ticket-driven development** — implement a ticket through a gated pipeline. This mode is active only
+  when a runtime file such as `.claude/runtime/mode.json` exists and names the ticket.
+
+Making the mode a file instead of something "agreed in chat" removes ambiguity. A new session, a
+resumed session and a hook all read the same source of truth. Discovery prohibitions are lifted only
+for an authorized ticket, and everything outside the ticket's approved scope stays read-only in both modes.
+
+## One canonical state, no shadow trackers
+
+Discovery progress lives in a single `analysis/state.json`; each ticket has its own
+`analysis/development/<TICKET>/state.json`. The instructions are explicit:
+
+- read the state file before starting any task;
+- **do not create a second, manually maintained progress tracker**;
+- treat existing artifacts as completed or partial evidence and do not regenerate them unless the
+  current phase requires it.
+
+Without that rule, an assistant tends to "help" by writing a fresh TODO list or a summary file in every
+session — and after a week nobody knows which one is true.
+
+## One step at a time, then stop
+
+In discovery mode Claude works on exactly **one architecture phase**, invoked through a slash command
+(`/architecture-phase <phase>`), and **stops at the end of it**. It never continues to the next phase on
+its own.
+
+In development mode an orchestrator command (`/ticket-workflow`) owns the stage order and the approval
+gates. Claude must stop at every boundary the orchestrator reports, and the approval semantics are strict:
+
+- an approval is **stage-specific and single-use**;
+- it can never be inferred from an earlier approval or from Claude's own text.
+
+This closes the classic failure mode of agentic coding: "you approved the plan, so I also implemented,
+tested and refactored the neighbouring module".
+
+## Write scope enforced by a hook
+
+The write rules are short:
+
+- always writable: `analysis/`, `docs/`, `graphs/`, `.claude/`;
+- in discovery mode every application repository is read-only;
+- in development mode an application path is writable only if the approved plan lists it in `allowed_paths`.
+
+The important part is *who* enforces it. A `PreToolUse` hook asks a **scope guard** about every write.
+All application repositories are gated the same way and the guard **fails closed**. The instruction to
+Claude is simply: do not work around a refusal.
+
+Changing scope is a process, not a negotiation:
+
+- widen scope by editing the plan and running an `amend-plan` step — it records a fresh, hash-bound plan
+  approval and keeps every completed stage;
+- a path that is already changed can never be dropped from scope;
+- unrelated changes elsewhere in the workspace don't block the pipeline — they produce
+  `reanchor_required`, and a `reanchor` step moves the baseline past them;
+- a commit inside an application repository always stops the pipeline for a human decision.
+
+## Git is never Claude's
+
+One line, both modes: **propose commit text; never commit, push or open a pull request.** The human
+owns history. Combined with the "commit stops the pipeline" rule above, the baseline can't drift without
+a person noticing.
+
+## Read less, prove more
+
+Source inspection is treated as a cost:
+
+- use existing architecture artifacts before reading application code;
+- read application code only when the required evidence is missing, and read the smallest set of files;
+- never rescan the whole workspace or repeat the initial inventory unless told to.
+
+Parallelism is switched off on purpose: **no subagents, no background investigations, no parallel
+scans** — one sequential evidence-gathering pass. For reverse engineering, a single traceable pass is
+worth more than speed: every claim can be followed back to what was read and when.
+
+## Evidence or it didn't happen
+
+Every non-trivial architecture claim must record:
+
+- repository, file path and line range;
+- evidence type;
+- confidence — one of `confirmed`, `probable`, `possible`, `unresolved`.
+
+Claude must not infer runtime behavior from names, and must not invent processes, imports, queues,
+exchanges, routes, credentials, configuration values, database ownership or service relationships.
+Missing information is recorded as **unresolved evidence** rather than filled in.
+
+Diagrams follow the same discipline: Mermaid diagrams are **generated from the normalized artifacts**
+and are never the primary source of truth.
+
+## A code-comment budget with numbers
+
+The style section is opinionated: code should explain itself — good names, extracted functions, small
+units. Comments are a last resort. Not allowed:
+
+- comments that restate the code;
+- history in code (what the previous version did and why it was wrong) — that belongs in the commit message;
+- section banners and decorative separators;
+- docstrings that repeat the signature.
+
+A comment is acceptable only for a genuinely exceptional case — a non-obvious external constraint, a
+counter-intuitive invariant, a trap the next editor would re-introduce — and **it must be agreed with the
+developer in the conversation before it is written**.
+
+And again the rule is enforced, not hoped for. A hook (`limit-code-comments.py`) blocks the write when
+the change exceeds the budget:
+
+| Limit | Value |
+|---|---|
+| Module docstring | ≤ 3 lines |
+| Function or class docstring | ≤ 1 line |
+| Inline comments | single lines only, never a block of 2+ |
+| Comments + docstrings | ≤ 10% of the file's non-blank lines |
+
+The hook measures the **delta**, so existing prose is grandfathered and Claude has no reason to
+"reformat" someone else's comments. Explanations worth keeping go into the ticket folder, not the source.
+
+## What makes this CLAUDE.md work
+
+- **Modes and permissions live in files**, so they survive new sessions and are visible to hooks.
+- **Every important "don't" has an enforcer** — a state file, an orchestrator gate or a hook — and the
+  instruction to Claude is to respect refusals, not to reason around them.
+- **Stopping is a feature.** One phase, one stage, one approval at a time.
+- **Truth has one home.** One state file per scope; artifacts are evidence; diagrams are derived.
+- **Uncertainty is first-class.** `unresolved` is a valid, expected answer.
+
+## Skeleton you can reuse
+
+~~~markdown
+# <Workspace>
+
+## Objective
+Two modes. Establish the active one before doing anything.
+- Discovery (default): reverse engineering only. No refactors, fixes, new behavior.
+- Delivery: active when `.claude/runtime/mode.json` names a ticket. Write only within its approved `allowed_paths`.
+Git is never yours: propose commit text; never commit, push or open a PR.
+
+## Canonical state
+`analysis/state.json` (discovery), `analysis/development/<TICKET>/state.json` (delivery).
+Read before every task. Never create a second tracker.
+
+## Execution
+Discovery: one phase per `/architecture-phase <phase>`, then stop.
+Delivery: `/ticket-workflow` owns stages and gates. Approvals are stage-specific and single-use.
+
+## Write scope
+Always writable: analysis/, docs/, graphs/, .claude/.
+Application repos: read-only unless listed in the approved plan. A PreToolUse hook enforces this
+and fails closed — do not work around a refusal.
+
+## Evidence
+Every claim: repo, path, lines, evidence type, confidence (confirmed | probable | possible | unresolved).
+Never invent routes, queues, credentials, config values or ownership — record them as unresolved.
+
+## Code style
+Self-explanatory code. Comments only by prior agreement; budget enforced by a hook.
+~~~
+
+The following articles in this section take the pieces one by one: the phase command, the ticket
+workflow orchestrator, the scope guard and the comment-budget hook.

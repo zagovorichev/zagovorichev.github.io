@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import {ArrowRight, ArrowUpRight, Clock, Play} from 'lucide-react';
 import {TopicIcon} from './icons';
-import {formatDate, type LinkItem, type PostMeta, type Video} from '@/lib/content';
+import {formatDate, type ClaudeKind, type LinkItem, type PostMeta, type Video} from '@/lib/content';
 
 export function GuideCard({guide}: {guide: PostMeta}) {
   return (
@@ -81,5 +81,35 @@ export function LinkCard({link, guideTitle}: {link: LinkItem; guideTitle?: strin
         </Link>
       )}
     </div>
+  );
+}
+
+const claudeKindLabel: Record<ClaudeKind, string> = {
+  'claude-md': 'CLAUDE.md',
+  skill: 'Skill',
+  command: 'Command',
+  hook: 'Hook',
+  workflow: 'Workflow',
+};
+
+export function ClaudeCard({post, featured}: {post: PostMeta; featured?: boolean}) {
+  return (
+    <Link
+      href={`/claude/${post.slug}/`}
+      className={`card claude-card${featured ? ' featured' : ''}`}
+      data-section="claude"
+    >
+      <span className="claude-card-top">
+        {post.kind && <span className="kind-badge">{claudeKindLabel[post.kind]}</span>}
+        <span className="card-meta-inline">
+          <Clock size={14} /> {post.readingMinutes} min
+        </span>
+      </span>
+      <h3>{post.title}</h3>
+      <p className="muted">{post.description}</p>
+      <span className="read-more">
+        Read <ArrowRight size={16} />
+      </span>
+    </Link>
   );
 }

@@ -62,6 +62,16 @@ const sectionPaths: Record<SectionKey, React.ReactNode> = {
       <path {...duo} d="M6 9h3M6 12.3h3M15 9h3" />
     </>
   ),
+  claude: (
+    <>
+      <rect x="2.5" y="4" width="19" height="16" rx="3" fill="currentColor" fillOpacity=".14" />
+      <rect {...duo} x="2.5" y="4" width="19" height="16" rx="3" />
+      <path {...duo} d="M2.5 8h19" />
+      <path {...duo} d="m6.5 12 2.5 2-2.5 2" />
+      <path d="M16 10.6l.75 1.65 1.65.75-1.65.75L16 15.4l-.75-1.65-1.65-.75 1.65-.75Z" fill="currentColor" />
+      <path {...duo} d="M11 16h2" />
+    </>
+  ),
   videos: (
     <>
       <rect x="2.5" y="4" width="19" height="13.5" rx="3" fill="currentColor" fillOpacity=".16" />

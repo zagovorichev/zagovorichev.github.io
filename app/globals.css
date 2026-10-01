@@ -24,6 +24,8 @@
 
   --c-guides: #0b7a5d;
   --c-guides-soft: #e6f4ef;
+  --c-claude: #0e7490;
+  --c-claude-soft: #e3f4f8;
   --c-videos: #d6334a;
   --c-videos-soft: #fdecef;
   --c-links: #2563eb;
@@ -59,6 +61,8 @@
 
   --c-guides: #2fbf93;
   --c-guides-soft: rgba(47, 191, 147, 0.13);
+  --c-claude: #3cc7e0;
+  --c-claude-soft: rgba(60, 199, 224, 0.13);
   --c-videos: #ff6b81;
   --c-videos-soft: rgba(255, 107, 129, 0.13);
   --c-links: #6a9cff;
@@ -75,6 +79,7 @@
 
 /* Section scoping: any element with data-section exposes --accent / --accent-soft */
 [data-section='guides'] { --accent: var(--c-guides); --accent-soft: var(--c-guides-soft); }
+[data-section='claude'] { --accent: var(--c-claude); --accent-soft: var(--c-claude-soft); }
 [data-section='videos'] { --accent: var(--c-videos); --accent-soft: var(--c-videos-soft); }
 [data-section='links'] { --accent: var(--c-links); --accent-soft: var(--c-links-soft); }
 [data-section='news'] { --accent: var(--c-news); --accent-soft: var(--c-news-soft); }
@@ -683,8 +688,14 @@ a.card:hover,
 
 .section-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 18px;
+}
+
+@media (max-width: 1180px) {
+  .section-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 @media (max-width: 1000px) {
@@ -962,6 +973,59 @@ a.card:hover,
   text-decoration: underline;
 }
 
+/* Claude section */
+.claude-note {
+  max-width: 640px;
+  margin-top: 12px;
+  font-size: 0.92rem;
+}
+
+.claude-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.kind-badge {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-family: var(--font-code);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.card-meta-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-faint);
+  font-size: 0.82rem;
+}
+
+.read-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.claude-card.featured {
+  padding: 26px;
+  background:
+    radial-gradient(ellipse 320px 180px at 100% 0%, var(--accent-soft), transparent 70%),
+    var(--surface);
+}
+
+.claude-card.featured h3 {
+  font-size: 1.3rem;
+}
+
 /* Empty state */
 .empty {
   display: flex;
@@ -975,7 +1039,8 @@ a.card:hover,
 }
 
 .empty h1,
-.empty h2 {
+.empty h2,
+.empty h3 {
   font-size: 1.5rem;
 }
 

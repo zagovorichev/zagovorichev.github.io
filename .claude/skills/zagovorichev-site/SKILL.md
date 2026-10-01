@@ -19,6 +19,7 @@ keep it accurate, professional and consistent. Site language is **English only**
 |---|---|---|---|
 | Home | `/` | `app/page.tsx` (hero, section cards, latest items) | brand green |
 | Guides — his how-to articles | `/guides/`, `/guides/<slug>/` | `content/guides/<slug>.mdx` | green |
+| Claude — how he develops with Claude Code (CLAUDE.md, skills, commands, hooks) | `/claude/`, `/claude/<slug>/` | `content/claude/<slug>.mdx` | cyan |
 | Videos — videos he recommends | `/videos/` | `content/videos.yaml` | red |
 | Links — useful websites + his notes | `/links/` | `content/links.yaml` | blue |
 | News — short notes on what he follows | `/news/`, `/news/<slug>/` | `content/news/<date>-<slug>.mdx` | amber |
@@ -41,6 +42,10 @@ Section names, URLs, blurbs and menu order live in `lib/site.ts` (`sections`, `n
   watching" must come from Oleksandr. If he only gives a URL, write a neutral one-sentence
   `description` of what the resource is, leave `note` out, and ask him for the note.
 - **Never invent biography facts** (employers, years, achievements) for About or anywhere else.
+- **Claude section = anonymized.** Articles about his Claude Code setups must never contain project,
+  company, client, product, repository or domain names (including acronyms, paths and command names
+  that embed them). Replace them with neutral placeholders and say once that names are anonymized.
+  Before committing, grep the new text for every real name that appeared in the source material.
 - Always set `date` (YYYY-MM-DD, today for new items). Lists are sorted newest-first automatically.
 - Keep slugs lowercase-kebab-case; they become URLs — don't rename published slugs without reason.
 - Images: put under `public/images/<section>/<slug>/`, reference as `/images/...`, give meaningful alt text.

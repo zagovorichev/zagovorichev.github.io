@@ -65,6 +65,26 @@ Two–five short paragraphs. Link the source: [release notes](https://example.co
 
 No `icon`/`subtitle` for news. The home page shows the 4 newest.
 
+## Claude article — `content/claude/<slug>.mdx`
+
+Documentation of his Claude Code development process: one article per CLAUDE.md, skill, slash command,
+hook or end-to-end workflow. URL: `/claude/<slug>/`. **Fully anonymized** (see SKILL.md rules).
+
+```mdx
+---
+title: "The scope guard: a PreToolUse hook that fails closed"
+description: "What it does, how it decides, and why Claude must not work around it."
+kind: hook            # claude-md | skill | command | hook | workflow
+order: 3              # optional position on /claude/ (lower first); otherwise newest first
+tags: [hooks, safety]
+date: 2026-10-01
+---
+```
+
+Page layout: `claude-md` and `workflow` articles appear under "Start here"; skills, commands and hooks
+in the grid below. Suggested article structure: purpose → where it sits in the workflow → inputs and
+state files → step-by-step behavior → rules it enforces → failure modes → reusable template.
+
 ## Video — `content/videos.yaml`
 
 A YAML list (keep `[]` when empty — the page then shows a "coming soon" state).

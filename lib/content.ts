@@ -13,9 +13,15 @@ export type Post = {
   date: string;
   tags: string[];
   icon?: string;
+  /** Claude section only: what the article documents */
+  kind?: ClaudeKind;
+  /** Optional manual position inside a list (lower first), then newest first */
+  order?: number;
   readingMinutes: number;
   source: string;
 };
+
+export type ClaudeKind = 'claude-md' | 'skill' | 'command' | 'hook' | 'workflow';
 
 export type PostMeta = Omit<Post, 'source'>;
 
@@ -45,7 +51,9 @@ const toDate = (v: unknown) => (v instanceof Date ? v.toISOString().slice(0, 10)
 
 const byDateDesc = <T extends {date: string}>(a: T, b: T) => b.date.localeCompare(a.date);
 
-function readPosts(dir: 'guides' | 'news'): Post[] {
+type PostDir = 'guides' | 'news' | 'claude';
+
+function readPosts(dir: PostDir): Post[] {
   const full = path.join(CONTENT, dir);
   if (!fs.existsSync(full)) return [];
   return fs
@@ -66,17 +74,27 @@ function readPosts(dir: 'guides' | 'news'): Post[] {
         date: toDate(data.date),
         tags: data.tags ?? [],
         icon: data.icon,
+        kind: data.kind,
+        order: data.order,
         readingMinutes: Math.max(1, Math.round(words / 200)),
         source: content,
       };
     })
-    .sort((a, b) => byDateDesc(a, b) || a.slug.localeCompare(b.slug));
+    .sort((a, b) => (a.order ?? Infinity) - (b.order ?? Infinity) || byDateDesc(a, b) || a.slug.localeCompare(b.slug));
 }
 
 const meta = ({source: _source, ...rest}: Post): PostMeta => rest; // eslint-disable-line @typescript-eslint/no-unused-vars
 
 export const getGuides = (): PostMeta[] => readPosts('guides').map(meta);
 export const getNews = (): PostMeta[] => readPosts('news').map(meta);
+
+export const getClaudePosts = (): PostMeta[] => readPosts('claude').map(meta);
+
+export function getClaudePost(slug: string): Post {
+  const post = readPosts('claude').find((p) => p.slug === slug);
+  if (!post) throw new Error(`Unknown Claude article ${slug}`);
+  return post;
+}
 
 export function getGuide(slug: string): Post {
   const post = readPosts('guides').find((p) => p.slug === slug);

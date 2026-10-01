@@ -1,4 +1,4 @@
-import {getGuides, getNews} from '@/lib/content';
+import {getClaudePosts, getGuides, getNews} from '@/lib/content';
 import {site} from '@/lib/site';
 
 export const dynamic = 'force-static';
@@ -9,6 +9,7 @@ export function GET() {
   const items = [
     ...getGuides().map((p) => ({...p, path: `/guides/${p.slug}/`})),
     ...getNews().map((p) => ({...p, path: `/news/${p.slug}/`})),
+    ...getClaudePosts().map((p) => ({...p, path: `/claude/${p.slug}/`})),
   ].sort((a, b) => b.date.localeCompare(a.date));
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
