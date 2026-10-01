@@ -1,0 +1,72 @@
+---
+title: "ticket-draft — issue drafts from evidence that never overstate it"
+description: "Turns confirmed findings into structured issue-tracker drafts: an eligibility gate, a claim-weakening normalizer, secret redaction, and a printed create command that is never executed."
+kind: skill
+track: standalone
+order: 40
+tags: [skill, issue-tracker, evidence]
+date: 2026-10-01
+---
+
+**Standalone.** Converts actionable findings from architecture and codebase artifacts — bugs,
+vulnerabilities, reliability gaps, missing tests, operational and handover items — into ticket
+**drafts**. It is read-only with respect to the tracker: it never creates, comments, edits, transitions
+or assigns, never starts an MCP server and never reads the API token.
+
+```bash
+draft_ticket.py draft <finding-id>                 # search artifacts for a stable finding id
+draft_ticket.py draft <artifact-path>              # one eligible finding → draft; several → list ids
+draft_ticket.py comment-draft <ticket-key> <artifact-path>   # a comment draft, not posted
+```
+
+Claude shows the output and the suggested `create` command; the human decides whether to run it, through
+a separate tracker skill, one explicit approval per write.
+
+## Eligibility gate
+
+A finding becomes a draft only if **all** hold: it is actionable; the affected repository or service is
+known; evidence exists; a done-state can be stated; and it is not merely an unanswered architecture
+question. Ineligible findings are refused with reasons — Claude is told not to force them into tickets.
+
+## The normalizer: artifact wording is not trusted
+
+The interesting part is `evidence_normalizer.py`. It resolves title, problem, observed behaviour and
+impact in a fixed precedence:
+
+1. explicit structured fields on the finding (`observed`, `problem`, `expected`, `impact`, `scope`);
+2. cited source locations and their summaries;
+3. confidence metadata;
+4. the entity's `name`/`note` — **low-trust hints only**, never rendered verbatim as a claim.
+
+Remaining free text goes through a **claim-weakening pass** that replaces — never deletes — specific
+unsupported collocations: "production broker", "live credential", "grants … access", "bypasses
+controls", "currently valid", "exploitable", "exposed", "used in production". The matching confidence
+dimension is flagged `unresolved`. Bare words like "production" are left alone; only the overstated
+phrases change.
+
+Confidence stays multi-dimensional in the draft — **mechanism vs runtime usage vs deployment exposure vs
+current validity vs privilege level** — never compressed into one word. A generic detector handles
+cases like "the same secret literal appears in two config files": the mechanism is confirmed, nothing
+about deployment or validity is, and the draft says exactly that.
+
+## Redaction
+
+Order of operations: **normalize → redact → render**. Redaction runs on every field regardless of what
+normalization decided. Keys are split into segments (`SERVICE_DEFAULT_PASS` → service, default, pass)
+and matched against sensitive segments (password, secret, token, cookie, auth, credential, api key,
+private key…); values are replaced with `<REDACTED>`. File paths, line numbers and finding IDs are
+preserved, so the draft stays verifiable.
+
+## Draft structure
+
+Title · type (with issue-type and label mapping) · problem · affected repositories · observed ·
+expected · evidence with `file:line` · evidence confidence per dimension · impact · proposed scope ·
+**non-goals** · acceptance criteria · verification steps · dependencies — followed by the suggested
+command, marked *not executed*. Fields without evidence render as *"To be defined — not derivable from
+current evidence"* instead of an invented value.
+
+## Why it is worth copying
+
+Language models write convincing security tickets. Convincing is the problem: an overstated ticket gets
+the wrong priority and the wrong fix. A deterministic normalizer between evidence and prose keeps the
+draft as strong as the evidence — and no stronger.

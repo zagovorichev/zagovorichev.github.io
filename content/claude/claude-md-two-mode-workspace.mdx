@@ -2,6 +2,7 @@
 title: "CLAUDE.md for a two-mode workspace: discovery and gated delivery"
 description: "A walkthrough of a production CLAUDE.md that switches Claude between read-only architecture discovery of legacy code and ticket-driven development behind approval gates, with hooks that enforce the rules."
 kind: claude-md
+track: overview
 order: 1
 tags: [claude-md, workflow, hooks]
 date: 2026-10-01
@@ -95,7 +96,8 @@ Changing scope is a process, not a negotiation:
 ## Git is never Claude's
 
 One line, both modes: **propose commit text; never commit, push or open a pull request.** The human
-owns history. Combined with the "commit stops the pipeline" rule above, the baseline can't drift without
+owns history — and a [`PreToolUse(Bash)` hook](/claude/hook-deny-git-writes/) blocks any git write that
+slips through. Combined with the "commit stops the pipeline" rule above, the baseline can't drift without
 a person noticing.
 
 ## Read less, prove more
@@ -193,5 +195,10 @@ Never invent routes, queues, credentials, config values or ownership — record 
 Self-explanatory code. Comments only by prior agreement; budget enforced by a hook.
 ~~~
 
-The following articles in this section take the pieces one by one: the phase command, the ticket
-workflow orchestrator, the scope guard and the comment-budget hook.
+## Where to go next
+
+- [The delivery pipeline end to end](/claude/ticket-pipeline-overview/) — stages, gates, state and drift.
+- [`/architecture-phase`](/claude/skill-architecture-phase/) — the discovery command this file refers to.
+- [`/ticket-workflow`](/claude/skill-ticket-workflow/) — the orchestrator of development mode.
+- [Scope guard](/claude/hook-scope-guard/), [git write guard](/claude/hook-deny-git-writes/) and
+  [comment budget](/claude/hook-comment-budget/) — the hooks that make the rules above real.

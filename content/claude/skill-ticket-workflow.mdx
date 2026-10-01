@@ -1,0 +1,97 @@
+---
+title: "/ticket-workflow — the orchestrator that drives roles through approval gates"
+description: "A user-facing command set (start, continue, approve-*, amend-plan, reanchor, close) on top of a Python driver that decides the next legal action and never fabricates a result."
+kind: skill
+track: delivery
+order: 10
+tags: [skill, orchestrator, approvals]
+date: 2026-10-01
+---
+
+**Role:** coordinate the whole [delivery pipeline](/claude/ticket-pipeline-overview/). It does not
+re-implement any role's reasoning and never fabricates a finding, a verdict, a QA result or a success.
+
+## Interface: simple words for the human, a CLI for Claude
+
+The user speaks in short commands; Claude translates them into driver calls and does not expose the
+internal CLI:
+
+| User says | What happens |
+|---|---|
+| `start PROJ-1234` | create the plan via the task role, present it, **stop** at gate A |
+| `continue PROJ-1234` | run the continue loop until the next boundary, blocker or terminal state |
+| `status` / `inspect` | summarize state (no raw JSON dumps unless asked) |
+| `resume PROJ-1234` | rebuild the next action from evidence; never reactivate mode without approval |
+| `approve-plan`, `approve-implementation`, `approve-fixes`, `approve-tests`, `approve-close` | record gates A–E |
+| `amend-plan [--rework]` | re-approve an edited plan; with `--rework`, send implementation back to gate B |
+| `reanchor [--ack-claimed]` | move baselines past unrelated drift |
+| `reset-counters` | clear loop caps — only while a cap is what blocks |
+| `reopen`, `close`, `handoff-status` | lifecycle and handoff checks |
+
+The normal rhythm is a conversation: `start` → read the plan → *"Plan approved. Continue."* → the loop
+stops at the implementation preview → *"Implementation preview approved. Continue."* → …
+
+## The continue loop
+
+1. `ticket_workflow.py next PROJ-1234` prints the next `action` and whether it is a **boundary**.
+2. Boundary → **stop**, report what approval or handoff is needed. Never pass it without a new
+   explicit user message.
+3. Automatic action (`run_review`, `run_review_audit`, `run_triage`, their reruns, `generate_pr_draft`)
+   → do the role's reasoning and dispatch it, then loop.
+
+Running a reasoning stage always follows the same seam:
+
+```bash
+ticket_workflow.py run PROJ-1234 --role review --op preflight   # read-only checks; refusal stops
+ticket_workflow.py run PROJ-1234 --role review --op diff        # review only
+# Claude performs the role exactly as its SKILL.md prescribes and writes the input JSON
+ticket_workflow.py dispatch PROJ-1234 --role review \
+    --input analysis/development/PROJ-1234/review-findings.input.json --complete --remove-input
+```
+
+The driver validates the input, runs the role CLI, records the outcome and removes the temp file. A
+non-zero exit **stops the workflow** with a redacted `last_error` — it is never treated as success.
+
+## Approval semantics
+
+Each `approve-*` may run only after a new user message approving that specific step. Approvals are
+bound to the artifact's path and hash and re-checked on every read, so rewriting a preview withdraws
+its approval automatically. Activation happens only inside `approve-plan` — there is deliberately no
+separate `activate` command, so the repositories can never open without a recorded plan approval.
+
+Git and issue-tracker writes are outside the pipeline entirely: git commands are printed at handoff,
+never executed (a branch can be created only after the user approves its name), and tracker writes go
+through a separate skill with an explicit "yes" per write.
+
+## Recovery is reconstructed, not remembered
+
+`resume` and `next` rebuild the next legal action from real evidence — state file, mode file, plan
+hash, git `HEAD`/status against baselines, triage, QA verdict, final summary — not from a single status
+string. Rules: never delete or overwrite valid artifacts, validate before trusting, separate workflow
+changes from pre-existing dirty state, and require approval before reactivating mode. If the state says
+*closed* but ticket changes remain, `next` returns `recovery_required` and suggests `reopen` instead of
+starting a new workflow.
+
+## Closing the loop with git
+
+A subtle problem the design solves: the pipeline never commits, but closing must not abandon work.
+Gate E refuses while the in-scope deliverable **or the ticket's own artifact folder** is uncommitted,
+and after the PR stage a human commit stops counting as drift — it is the expected handoff. Without
+that rule the pipeline had no exit: closing refused because work was uncommitted, and committing made
+the next action `recovery_required`.
+
+## Guarantees
+
+- Allowlisted role scripts only; argument arrays, no shell, timeouts, redacted output; git and tracker
+  mutation tokens are rejected at the dispatcher.
+- Never writes application source itself; never commits or pushes.
+- Timestamps are generated internally in UTC; test-only flags exist for deterministic tests.
+- Eight test modules cover the orchestrator alone: amend, binding, close, end-to-end, limits, stale
+  delivery and subtasks.
+
+## Takeaways for your own orchestrator
+
+- Give the human three verbs (start, continue, approve) and hide the machinery.
+- Make "what happens next" a pure function of evidence on disk.
+- Treat a role's failure as a stop, not as something to work around.
+- Put the exit conditions (handoff, close) into the design from day one — that is where loops hide.

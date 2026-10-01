@@ -75,14 +75,18 @@ hook or end-to-end workflow. URL: `/claude/<slug>/`. **Fully anonymized** (see S
 title: "The scope guard: a PreToolUse hook that fails closed"
 description: "What it does, how it decides, and why Claude must not work around it."
 kind: hook            # claude-md | skill | command | hook | workflow
-order: 3              # optional position on /claude/ (lower first); otherwise newest first
+track: guardrails     # overview | discovery | delivery | standalone | guardrails (section on /claude/)
+order: 30             # optional position inside its track (lower first); otherwise newest first
 tags: [hooks, safety]
 date: 2026-10-01
 ---
 ```
 
-Page layout: `claude-md` and `workflow` articles appear under "Start here"; skills, commands and hooks
-in the grid below. Suggested article structure: purpose → where it sits in the workflow → inputs and
+Page layout: `/claude/` renders "Start here" (`track: overview`) and then one block per track. The
+delivery block shows `components/PipelineStrip.tsx` — a linked row of pipeline stages with gate letters;
+it links to fixed slugs (`skill-ticket-*`), so keep those slugs stable or update the component.
+Anonymized naming used across the section: skills `ticket-*`, keys `PROJ-1234`, repositories
+`service-a/b/c`, mode file `.claude/runtime/mode.json`. Suggested article structure: purpose → where it sits in the workflow → inputs and
 state files → step-by-step behavior → rules it enforces → failure modes → reusable template.
 
 ## Video — `content/videos.yaml`

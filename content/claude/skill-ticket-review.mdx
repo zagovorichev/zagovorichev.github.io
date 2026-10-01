@@ -1,0 +1,81 @@
+---
+title: "ticket-review — a read-only review that emits schema-validated findings"
+description: "Reviews the uncommitted ticket diff against the plan and acceptance criteria across a fixed list of risk dimensions. One finding is one concrete, reproducible problem; zero findings is a valid result."
+kind: skill
+track: delivery
+order: 13
+tags: [skill, code-review]
+date: 2026-10-01
+---
+
+**Stage 3 of the [pipeline](/claude/ticket-pipeline-overview/).** Strictly read-only for every git
+repository. Writes exactly one file — `review-findings.json` — and never fixes code.
+
+## Building the right diff
+
+The implementation is **uncommitted**, so `git diff <baseline>..HEAD` would show nothing. The tool's
+`diff` combines, per affected root, tracked modifications, staged and unstaged changes and untracked
+files **under `allowed_paths`**. Changes outside the scope are flagged, not reviewed as part of the
+ticket.
+
+```bash
+ticket_review.py preflight PROJ-1234
+ticket_review.py diff PROJ-1234
+```
+
+## What the reviewer looks at
+
+A fixed checklist keeps reviews comparable between tickets:
+
+- acceptance criteria and plan compliance; behaviour regressions;
+- message-broker compatibility (exchanges, queues, routing keys) and ack/retry semantics;
+- cache key/value schema; database persistence effects;
+- HTTP request/response compatibility; authentication and access rights;
+- configuration and environment resolution; startup and worker registration;
+- error handling and observability;
+- concurrency, idempotency and duplicate processing; timeouts and reconnects;
+- testability; **accidental production endpoint or credential use**;
+- contract mismatches across repositories.
+
+## Finding rules
+
+One finding = one concrete problem with an exact repository/file/line range, the plan requirement or
+acceptance criterion it violates, and a reproducible failure or risk path. No style preferences, no
+speculation, no code fixes, no inflated confidence.
+
+```json
+{
+  "id": "R1",
+  "severity": "critical|medium|low",
+  "issue": "…",
+  "location": {"repo": "service-a", "file": "service-a/…", "line_start": 42, "line_end": 47},
+  "plan_requirement": "…",
+  "why_it_matters": "…",
+  "evidence": "…",
+  "reproduction_or_failure_path": "…",
+  "minimal_fix": "…",
+  "confidence": "confirmed|strong|possible"
+}
+```
+
+IDs must be `R1, R2, …` in order. **Zero findings is valid** — `{"findings": []}` — and inventing a
+finding to have something to show is explicitly forbidden.
+
+## The tool owns the scope
+
+```bash
+ticket_review.py write PROJ-1234 --findings findings.json
+```
+
+`write` attaches the authoritative scope block (roots, baseline commits, in-scope changed paths),
+validates the schema and installs the file. The reviewer cannot claim it reviewed something it did not.
+
+## Reruns
+
+`--rerun` after approval redoes the review and marks audit and triage **stale**.
+
+## Why a separate auditor follows
+
+Reviewers — human or model — over-report. Rather than asking the reviewer to be more careful, the next
+stage, [ticket-review-auditor](/claude/skill-ticket-review-auditor/), checks every finding
+independently.

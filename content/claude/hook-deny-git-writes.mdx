@@ -1,0 +1,63 @@
+---
+title: "Git write guard: blocking every repository mutation, however it is spelled"
+description: "A PreToolUse(Bash) hook that parses shell commands and blocks git writes through -C, -c, env prefixes, absolute paths and command chains, while keeping read-only git available."
+kind: hook
+track: guardrails
+order: 31
+tags: [hooks, git, safety]
+date: 2026-10-01
+---
+
+**Guardrail.** "Claude never commits, pushes or changes repository state; it proposes commit text" — the
+policy is in `CLAUDE.md`, a permission denylist backs it up, and this hook closes the gaps the denylist
+cannot see.
+
+```json
+{"matcher": "Bash",
+ "hooks": [{"type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/deny-git-writes.py\"",
+            "statusMessage": "Checking git write-guard…"}]}
+```
+
+## Why a permission denylist is not enough
+
+Patterns like `Bash(git commit:*)` match the beginning of a command. They miss:
+
+- `git -C service-a commit -m …` and `git -c user.name=x commit`;
+- `GIT_DIR=… git push`, `env git push`, `/usr/bin/git push`;
+- chains: `make test && git add . && git commit -m wip`, pipes, `;`, `&`, newlines.
+
+## How the hook parses
+
+1. Split the command on `||`, `&&`, `;`, `|`, `&` and newlines.
+2. Tokenize each segment with `shlex` (falling back to whitespace on bad quoting).
+3. Skip leading `VAR=value` assignments and a leading `env`; accept `git` by basename, so absolute paths
+   count.
+4. Skip git's global options, including the ones that take an argument (`-C`, `-c`, `--git-dir`,
+   `--work-tree`, …).
+5. Decide on the subcommand.
+
+## What is blocked
+
+- **Always:** `push`, `commit`, `add`, `rm`, `mv`, `reset`, `restore`, `checkout`, `switch`, `merge`,
+  `rebase`, `cherry-pick`, `revert`, `pull`, `am`, `clean`, `apply`, `init`, `clone`, `update-index`,
+  `update-ref`, `gc`, `prune`, `filter-branch` and other plumbing that writes.
+- **`stash`** unless it is `stash list` or `stash show`.
+- **`config`** when it sets or unsets (two positionals or a write flag); `git config --get x` is fine.
+- **Dual-use commands** — `branch`, `tag`, `remote`, `submodule`, `worktree`, `notes`, `replace` — only in
+  their writing forms (`-d`, `-D`, `-m`, `--force`, `--set-url`, `add`, `remove`, `prune`, …).
+  `git branch --list` and `git remote -v` keep working.
+
+On a hit the hook exits `2` with a message the model can act on: what was detected, that the assistant
+may only propose commit text, and which read-only commands remain allowed.
+
+## Fail-open, on purpose — but only for non-git input
+
+If the hook cannot parse its JSON input at all, it allows the call: a broken hook must not block all
+shell work. Any *recognised* git write is always blocked. This is the opposite choice to the
+[scope guard](/claude/hook-scope-guard/), and the difference is deliberate — a file-write guard protects
+data, so it fails closed; a command parser that cannot read its own input has nothing to protect.
+
+## Tested like code
+
+The hook ships with unit tests covering the tricky spellings, so a refactor cannot quietly reopen a gap.

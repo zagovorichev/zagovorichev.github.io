@@ -1,0 +1,78 @@
+---
+title: "The scope guard: a PreToolUse hook that fails closed"
+description: "Every Edit, Write and NotebookEdit passes a shell hook and a shared Python guard that knows the application repositories, the mode file and the plan hash. No valid mode file means no authorized path."
+kind: hook
+track: guardrails
+order: 30
+tags: [hooks, safety, scope]
+date: 2026-10-01
+---
+
+**Guardrail.** The rule "application repositories are read-only unless an approved plan lists the
+path" lives in `CLAUDE.md` — but a rule in prose is a suggestion. This hook makes it a fact.
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {"matcher": "Edit|Write|NotebookEdit",
+       "hooks": [{"type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/protect-architecture-scope.sh"}]}
+    ]
+  }
+}
+```
+
+Exit code `2` blocks the tool call and shows stderr to the model; `0` allows it.
+
+## Decision order
+
+**1. Extract the target path** — `file_path` for Edit/Write, `notebook_path` for NotebookEdit (forgetting
+notebooks is an easy hole).
+
+**2. Refuse traversal first.** The allowlist below is a bash `case` glob: it matches the string
+literally and never resolves it. Without this check, `$HOME/.claude/skills/../../.ssh/id_rsa` would match
+`$HOME/.claude/skills/*` and be allowed. A `case` cannot normalise paths, so the only safe option is to
+refuse any `..` and make the caller pass a resolved path.
+
+**3. Workspace allowlist** — always writable: `analysis/`, `docs/`, `graphs/`, `.claude/`, `CLAUDE.md`,
+a few tooling folders, and Claude's own plans, memory and personal skills under `$HOME`.
+
+**4. Optional local widening** — an untracked `local-allow.txt`, one glob per line, for
+machine-specific exceptions. It exists so nobody hides a local hack with
+`git update-index --skip-worktree` (which silently swallows every later edit to the hook — the setup's
+history says that is exactly how an unconditional exception survived two commits). An application
+repository is **never** eligible for local widening; the guard answers that question, so the hook does
+not need its own copy of the repository list.
+
+**5. Everything else → the shared guard.** `scope_guard.py hook-decide --workspace … --path …`.
+Any non-zero exit, **including a crash**, blocks the write.
+
+## The shared guard
+
+One implementation of the write decision, used by the hook **and** by every mutating skill:
+
+- it owns the list of application repositories, including nested ones the outer git cannot see into
+  — so the hook can never fall out of sync when a repository is added (which also happened once);
+- it resolves the path (symlinks included) and refuses anything that lands outside an application
+  repository for a *stated* reason rather than by omission;
+- it loads `.claude/runtime/mode.json` and validates required keys, the ticket, and that the SHA-256 of
+  the approved plan still matches;
+- a write is allowed only when the resolved path's git root is an approved affected root, the path
+  matches that root's `allowed_paths`, and it is not denylisted (`CLAUDE.md`, `.claude/**`, deployment
+  environment files).
+
+**Absent, malformed, incomplete or hash-stale mode file ⇒ discovery mode ⇒ every application write is
+blocked.** Routing discovery-mode writes through the same guard can never weaken discovery.
+
+## Honest about its boundary
+
+The guard documents what it does *not* enforce: the outer workspace repository keeps a coarse allowlist
+in the hook; its per-path development scope is checked by the task skill and post-stage reports, not by
+the hook. Writing that down prevents the next person from assuming a protection that is not there.
+
+## Takeaways
+
+- Put security decisions in one tested module and call it from everywhere.
+- Make the default answer *no*, and make crashes count as *no*.
+- Validate strings before matching them; glob matching is not path resolution.
+- Leave room for local exceptions in a visible, untracked file — or people will invent invisible ones.

@@ -1,0 +1,62 @@
+---
+title: "ticket-pr — a PR-ready handoff that prints git commands but never runs them"
+description: "Builds a per-repository final summary with commit messages, PR texts and merge order, and prints the exact git commands for a human. Refuses unless QA passed and the review chain is fresh."
+kind: skill
+track: delivery
+order: 18
+tags: [skill, handoff, git]
+date: 2026-10-01
+---
+
+**Final stage of the [pipeline](/claude/ticket-pipeline-overview/).** Produces
+`final-summary.md` with one section per affected repository and **prints** the git and PR commands a
+human may run. It is read-only for every application repository and never executes git or the PR CLI.
+
+## Refuse when
+
+- the QA verdict is not `pass`;
+- review, audit or triage are stale;
+- changed paths fall outside `allowed_paths`, or `HEAD` moved from the baseline;
+- unresolved findings remain — an `apply_now` still pending or a critical product decision open;
+- for a multi-repository ticket, the merge order is missing or ambiguous.
+
+## Input: one entry per repository
+
+```json
+{
+  "roots": [
+    {
+      "repo": "service-a",
+      "implementation_summary": "…", "review_fix_summary": "…", "qa_evidence": "…",
+      "risks": "…", "dependency_order": 1, "tracker_linkage": "Fixes PROJ-1234",
+      "commit_message": "PROJ-1234: …", "pr_title": "PROJ-1234: …", "pr_body": "…"
+    }
+  ]
+}
+```
+
+The tool adds baseline commit, current commit and the in-scope changed files per repository, validates
+the metadata and prints, per root:
+
+```bash
+git -C <root> add -- <in-scope changed files only>
+git -C <root> commit -m "<message>"
+git -C <root> push
+(cd <root> && gh pr create --title "…" --body "…")   # only if the CLI exists
+```
+
+`git add` lists **only in-scope paths** — plus the ticket's own artifact folder in the workspace
+repository, because closing refuses while that folder is uncommitted. No destructive command (reset,
+clean, stash, force-push, branch deletion) is ever printed.
+
+## Multi-repository tickets
+
+One section and one command set per repository, ordered by distinct `dependency_order` values with an
+explicit merge and deploy order. This is **not** an atomic cross-repository merge — each repository gets
+its own pull request, and the summary says in which order to land them.
+
+## Why print instead of run
+
+The human owns history. Printing exact, scoped commands keeps the last step fast — copy, review, run —
+while making it impossible for the agent to push something nobody looked at. A
+[git write guard](/claude/hook-deny-git-writes/) backs this up at the tool level.

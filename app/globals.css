@@ -1026,6 +1026,81 @@ a.card:hover,
   font-size: 1.3rem;
 }
 
+.track-lead {
+  margin: -10px 0 18px;
+}
+
+.pipeline {
+  margin: 0 0 22px;
+  padding: 18px 18px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-subtle);
+}
+
+.pipeline-steps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 6px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.pipeline-steps li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pipeline-steps li + li::before {
+  content: '→';
+  color: var(--text-faint);
+}
+
+.pipeline-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  border-radius: 10px;
+  background: var(--surface);
+  font-family: var(--font-code);
+  font-size: 0.84rem;
+  font-weight: 600;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.pipeline-step:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.pipeline-steps li.optional .pipeline-step {
+  border-style: dashed;
+}
+
+.gate {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--bg);
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.pipeline figcaption a {
+  color: var(--accent);
+  font-weight: 600;
+}
+
 /* Empty state */
 .empty {
   display: flex;

@@ -1,0 +1,64 @@
+---
+title: "Comment budget: enforcing self-explanatory code with numbers"
+description: "A PreToolUse hook that measures docstrings and comments in the Python delta, grandfathers existing prose, and blocks writes that exceed a numeric budget."
+kind: hook
+track: guardrails
+order: 32
+tags: [hooks, code-style, python]
+date: 2026-10-01
+---
+
+**Guardrail.** Language models love comments: banners, restated code, "previously this did X". The
+project rule is the opposite — code must read on its own, and a comment is a last resort agreed with the
+developer *before* it is written. A rule like that drifts unless something measures it.
+
+```json
+{"matcher": "Edit|Write|NotebookEdit",
+ "hooks": [{"type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/limit-code-comments.py\"",
+            "statusMessage": "Checking comment budget…"}]}
+```
+
+## The budget
+
+| Limit | Value |
+|---|---|
+| module docstring | ≤ 3 lines |
+| function or class docstring | ≤ 1 line |
+| comment blocks | single lines only — 2+ consecutive comment lines is a block |
+| comments + docstrings | ≤ 10% of non-blank lines (files of 30+ lines, more than 3 prose lines) |
+
+## How it measures
+
+- It only looks at `.py` files and reconstructs **before** (the file on disk) and **after** (the `Write`
+  content, or the `Edit` replacement applied — including `replace_all`).
+- Comments come from Python's `tokenize`, so `#` inside strings never counts, and only full-line comments
+  are considered. `noqa` and `pragma:` lines are ignored.
+- Docstrings come from `ast`: module, function, async function and class.
+
+## Only the delta counts
+
+Every structural problem gets an identity (for a comment block, its exact text). Problems that already
+existed in the *before* version are **grandfathered** with a counter, so the hook judges what this edit
+adds — not what a line shift makes look new. The ratio check fires only if prose grew by more than one
+line *and* the result exceeds 10%.
+
+That has a useful side effect: Claude has no reason to "clean up" other people's comments, which would be
+out of scope anyway.
+
+## The refusal teaches the alternative
+
+```text
+Blocked: comment budget exceeded in parser.py
+  - parse_line docstring is 4 lines (max 1)
+  - comment block of 2+ lines at line 58
+Make the code carry the meaning: name the function, name the variable, or let a test assert the
+invariant. Prose worth keeping belongs in analysis/development/<TICKET>/. A genuine exception needs the
+developer's agreement BEFORE it is written.
+```
+
+## Why enforce style with a hook
+
+Style rules in `CLAUDE.md` decay over a long session; a hook does not get tired. Measuring only the delta
+keeps the rule fair on legacy code, and the error message points at the better move — a name or a test —
+instead of just saying no.

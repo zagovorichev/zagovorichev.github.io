@@ -1,16 +1,31 @@
 import type {Metadata} from 'next';
 import PageHeader from '@/components/PageHeader';
+import PipelineStrip from '@/components/PipelineStrip';
 import {ClaudeCard} from '@/components/cards';
-import {SectionTile} from '@/components/icons';
-import {getClaudePosts} from '@/lib/content';
+import {getClaudePosts, type ClaudeTrack, type PostMeta} from '@/lib/content';
 import {sections} from '@/lib/site';
 
 export const metadata: Metadata = {title: 'Claude', description: sections.claude.blurb};
 
+const tracks: Array<{key: Exclude<ClaudeTrack, 'overview'>; title: string; lead: string}> = [
+  {
+    key: 'discovery',
+    title: 'Discovery track',
+    lead: 'Read-only reverse engineering of legacy code, one bounded phase at a time.',
+  },
+  {
+    key: 'delivery',
+    title: 'Delivery pipeline',
+    lead: 'Ticket-driven development behind hash-bound human approvals.',
+  },
+  {key: 'standalone', title: 'Standalone skills', lead: 'Useful on their own, outside the pipeline.'},
+  {key: 'guardrails', title: 'Hooks and guards', lead: 'The parts that enforce the rules instead of hoping for them.'},
+];
+
 export default function ClaudePage() {
   const posts = getClaudePosts();
-  const overview = posts.filter((p) => p.kind === 'claude-md' || p.kind === 'workflow');
-  const parts = posts.filter((p) => !overview.includes(p));
+  const byTrack = (t: ClaudeTrack): PostMeta[] => posts.filter((p) => (p.track ?? 'overview') === t);
+  const overview = byTrack('overview');
 
   return (
     <div className="container page">
@@ -32,22 +47,22 @@ export default function ClaudePage() {
         </section>
       )}
 
-      <section className="section">
-        <h2 className="subheading">Skills, commands and hooks</h2>
-        {parts.length > 0 ? (
-          <div className="card-grid">
-            {parts.map((p) => (
-              <ClaudeCard key={p.slug} post={p} />
-            ))}
-          </div>
-        ) : (
-          <div className="empty" data-section="claude">
-            <SectionTile section="claude" size="lg" />
-            <h3>One article per skill — in progress</h3>
-            <p className="muted">Each skill, slash command and hook of the workflow gets its own detailed write-up.</p>
-          </div>
-        )}
-      </section>
+      {tracks.map((t) => {
+        const items = byTrack(t.key);
+        if (items.length === 0) return null;
+        return (
+          <section key={t.key} className="section">
+            <h2 className="subheading">{t.title}</h2>
+            <p className="muted track-lead">{t.lead}</p>
+            {t.key === 'delivery' && <PipelineStrip />}
+            <div className="card-grid">
+              {items.map((p) => (
+                <ClaudeCard key={p.slug} post={p} />
+              ))}
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 }

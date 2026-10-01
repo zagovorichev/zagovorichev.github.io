@@ -1,0 +1,63 @@
+---
+title: "ticket-fixer — minimal fixes that send the review chain round again"
+description: "Applies the smallest safe correction for findings that are audit-valid and triaged apply_now, after a preview and a fresh approval. Completing it marks review, audit and triage stale."
+kind: skill
+track: delivery
+order: 16
+tags: [skill, fixes, approvals]
+date: 2026-10-01
+---
+
+**Optional stage of the [pipeline](/claude/ticket-pipeline-overview/), gate C.** Runs after triage,
+inside an active development mode. Never commits, pushes or touches the tracker.
+
+## Preconditions
+
+The common fail-closed set (active mode, matching ticket, valid plan and hash, canonical scope, valid
+state, no unexplained drift) **plus a fresh review chain**: review, audit and triage all completed and
+not stale, with schema-valid artifacts.
+
+## Phase 1 — preview
+
+```bash
+ticket_fixer.py preflight PROJ-1234 [--findings R1,R3]
+```
+
+For each target the tool verifies that the finding exists, its audit verdict is `valid`, its triage is
+`apply_now`, its cited location still resolves (the code has not moved under it), and the fix stays in
+scope. It refuses on overlapping findings, out-of-scope or committed drift.
+
+Claude then reads the cited code, writes a **fix preview** — files, minimal change, non-goals — and
+stops. A fresh explicit approval is required before any edit.
+
+## Phase 2 — fix and report
+
+```bash
+ticket_fixer.py report PROJ-1234 --narrative fix.json --complete
+```
+
+```json
+{
+  "findings_fixed": ["R1"],
+  "findings_skipped": [{"finding_id": "R3", "reason": "would require a contract change"}],
+  "remaining_risks": ["renewed review must confirm no regression in the retry path"]
+}
+```
+
+`report` recomputes the diff, refuses anything out of scope, writes `fix-results.md`, and on completion
+**stales the review chain**.
+
+## Refuse when
+
+- the finding is not valid or not `apply_now`;
+- the cited code changed (the finding is stale);
+- findings conflict with each other;
+- the fix needs a new contract, a product decision, a migration or an unplanned file;
+- the plan hash or the baseline is stale.
+
+## Why fixing re-triggers review
+
+A fix is new code, and new code deserves the same scrutiny as the original change. Because the fixer
+stales review, audit and triage, QA cannot start until the fixed code has been reviewed again. Loop caps
+(5 fixer cycles, 8 review reruns) keep this from spinning forever; hitting one stops the pipeline for a
+human.

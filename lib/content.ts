@@ -15,6 +15,8 @@ export type Post = {
   icon?: string;
   /** Claude section only: what the article documents */
   kind?: ClaudeKind;
+  /** Claude section only: which part of the process it belongs to */
+  track?: ClaudeTrack;
   /** Optional manual position inside a list (lower first), then newest first */
   order?: number;
   readingMinutes: number;
@@ -22,6 +24,7 @@ export type Post = {
 };
 
 export type ClaudeKind = 'claude-md' | 'skill' | 'command' | 'hook' | 'workflow';
+export type ClaudeTrack = 'overview' | 'discovery' | 'delivery' | 'standalone' | 'guardrails';
 
 export type PostMeta = Omit<Post, 'source'>;
 
@@ -75,6 +78,7 @@ function readPosts(dir: PostDir): Post[] {
         tags: data.tags ?? [],
         icon: data.icon,
         kind: data.kind,
+        track: data.track,
         order: data.order,
         readingMinutes: Math.max(1, Math.round(words / 200)),
         source: content,

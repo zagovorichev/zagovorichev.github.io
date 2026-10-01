@@ -1,0 +1,53 @@
+---
+title: "/architecture-finalize — a final report that adds no new claims"
+description: "Synthesizes the architecture documentation strictly from validated artifacts: no source reading, artifact IDs on every conclusion, facts separated from interpretation, confidence never upgraded."
+kind: skill
+track: discovery
+order: 22
+tags: [skill, architecture, documentation]
+date: 2026-10-01
+---
+
+**Discovery track, last step.** Turns validated architecture artifacts into human-readable
+documentation. It runs on a cheaper model on purpose — by now the thinking is done; this is synthesis.
+
+```yaml
+disable-model-invocation: true
+allowed-tools: Read Grep Glob Bash
+model: sonnet
+```
+
+## Preconditions
+
+Every required discovery phase is `completed` or explicitly accepted as `partial`. If any is still
+`pending` or `in_progress`, stop and report it.
+
+## Source restriction
+
+Read only `analysis/`, `docs/` and `graphs/`. **Do not read application repositories.** Do not introduce
+any architecture claim that the artifacts do not support.
+
+## Outputs
+
+`architecture-overview`, `system-components`, `runtime-topology`, `integration-topology`,
+`data-architecture`, `security-architecture`, `configuration-architecture`, `risk-register`,
+`unresolved-evidence` and recommendations for the next phase of work.
+
+## Claim handling
+
+For every major conclusion:
+
+- reference the supporting artifact IDs;
+- preserve the confidence level;
+- separate facts from interpretations;
+- **never convert a probable finding into a confirmed one**.
+
+Then validate output links and referenced IDs, mark `final-report` completed, clear `current_phase` and
+`next_phase`, report generated files and unresolved risks — and stop.
+
+## Why this discipline matters
+
+Final reports are where uncertainty usually evaporates: "probably calls X" becomes "calls X" because it
+reads better. Forbidding new claims and requiring artifact IDs turns the report into a view over the
+evidence rather than a new, unverifiable narrative. A dedicated `unresolved-evidence` document keeps the
+gaps visible to whoever acts on the report.

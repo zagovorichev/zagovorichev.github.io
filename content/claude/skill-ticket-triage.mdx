@@ -1,0 +1,65 @@
+---
+title: "ticket-triage — deciding what happens to each valid finding"
+description: "Classifies only audit-valid findings into apply_now, new ticket, product decision, documentation, accepted risk or skip. Weak, invalid and duplicate findings are recorded as skipped, never classified."
+kind: skill
+track: delivery
+order: 15
+tags: [skill, triage, code-review]
+date: 2026-10-01
+---
+
+**Stage 5 of the [pipeline](/claude/ticket-pipeline-overview/).** Read-only for all repositories;
+writes only `triage.json`. Its job is a decision per finding — inside this ticket, beyond it, or not at
+all.
+
+## Classifications
+
+| Class | When |
+|---|---|
+| `apply_now` | valid, and the fix is inside the current acceptance criteria **and** `allowed_paths`; no contract or product decision needed; acceptable risk |
+| `new_ticket` | valid and actionable, but outside this ticket's scope |
+| `requires_product_decision` | expected behaviour is ambiguous; a business or contract choice is needed |
+| `documentation_only` | the code is right; docs or runbook are missing or wrong |
+| `accept_risk` | a valid issue intentionally left as is — **explicit rationale required**, never silent |
+| `skip` | valid but irrelevant, obsolete or intentionally excluded — with a reason |
+
+## Only valid findings may be classified
+
+The tool refuses any classification of a finding whose audit verdict is not `valid`, or whose id is
+unknown. Every weak, invalid and duplicate finding must still appear — under `skipped_findings`, with
+its audit verdict — so nothing disappears without a trace.
+
+```json
+{
+  "classifications": [
+    {
+      "finding_id": "R1",
+      "classification": "apply_now",
+      "reason": "…",
+      "within_current_ticket_scope": true,
+      "risk_if_applied": "low",
+      "spinoff_draft_ref": null
+    }
+  ],
+  "skipped_findings": [
+    {"finding_id": "R2", "audit_verdict": "weak", "reason": "Only valid findings may be triaged."}
+  ]
+}
+```
+
+```bash
+ticket_triage.py preflight PROJ-1234
+ticket_triage.py write PROJ-1234 --classifications triage.json
+```
+
+`new_ticket` items are ready for [evidence-based ticket drafting](/claude/skill-ticket-draft/); triage
+itself never drafts or creates tickets.
+
+## Why the categories matter
+
+"Should we fix this?" is really several questions: is it in scope, is it ours to decide, is it code or
+documentation, and do we accept the risk. Naming the outcomes stops two failure modes at once — scope
+creep (fixing everything the reviewer noticed) and silent drops (ignoring findings nobody wants).
+
+Only `apply_now` feeds the [fixer](/claude/skill-ticket-fixer/). If there are none, the pipeline goes
+straight to [QA](/claude/skill-ticket-qa/).

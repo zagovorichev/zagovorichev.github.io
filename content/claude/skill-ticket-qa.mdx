@@ -1,0 +1,60 @@
+---
+title: "ticket-qa — an honest verdict against every acceptance criterion"
+description: "Verifies the final implementation with the smallest sufficient checks on local-only services. Produces pass, fail or blocked with an acceptance matrix the tool validates; never contacts production."
+kind: skill
+track: delivery
+order: 17
+tags: [skill, testing, qa]
+date: 2026-10-01
+---
+
+**Stage 7 of the [pipeline](/claude/ticket-pipeline-overview/), gate D for test writes.** Reads the
+diff, runs the smallest sufficient checks and records a verdict. It may write **tests and fixtures
+only**, in planned paths; never production code, never production hosts or credentials, never commits.
+
+QA requires a **fresh** triage: if the fixer ran, QA refuses until review, audit and triage ran again.
+
+## Smallest sufficient level
+
+static validation → unit tests → integration tests → local container checks → local HTTP, message
+broker, cache and database checks where relevant.
+
+Tests must **fail when the targeted behaviour is broken**. If verification needs a production seam that
+is not in the plan, QA stops and asks for a plan amendment instead of inventing one.
+
+## The QA record
+
+```json
+{
+  "acceptance_matrix": [
+    {"criterion": "replay() returns 2", "status": "verified",
+     "evidence": "pytest tests/test_replay.py::test_two passed"}
+  ],
+  "commands": ["python3 -m pytest tests/test_replay.py"],
+  "tests_added_or_modified": ["service-a/tests/test_replay.py"],
+  "results": "1 passed",
+  "runtime_observations": [],
+  "skipped_checks": ["integration: no local broker available"],
+  "blockers": [],
+  "residual_risk": "none",
+  "verdict": "pass",
+  "production_contacted": false
+}
+```
+
+The tool fills in the tested commit per repository and validates:
+
+- the matrix covers **every** acceptance criterion of the ticket;
+- `pass` only if every criterion is `verified` or `not_applicable` **and** there are no blockers;
+- `blocked` requires at least one recorded blocker — missing infrastructure is *blocked*, not *pass*;
+- no production host or credential appears in commands, observations or blockers;
+- every added test is inside `allowed_paths` **and** is a genuine test or fixture path.
+
+## Verdict drives state
+
+`pass` → completed (and only this unlocks the PR stage); `fail` → failed; `blocked` → blocked.
+
+## Why "blocked" is a first-class outcome
+
+The most common dishonest QA result is "pass" because nothing *failed* — when in fact nothing *ran*.
+Making "blocked" a valid, recorded verdict with a mandatory reason removes the incentive to round up.

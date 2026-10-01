@@ -1,0 +1,106 @@
+---
+title: "ticket-task — turning a ticket into a bounded, hash-bound plan"
+description: "The only skill that can switch development mode on and off: read the ticket, author a plan with an explicit file scope, then activate a fail-closed write guard after a separate human approval."
+kind: skill
+track: delivery
+order: 11
+tags: [skill, planning, scope]
+date: 2026-10-01
+---
+
+**Stage 1 of the [pipeline](/claude/ticket-pipeline-overview/).** The workspace is in read-only
+discovery mode by default. `ticket-task` is the only skill that can open a bounded, ticket-scoped
+development mode — and it never writes application code itself. It authors the plan and manages the
+guard.
+
+## Lifecycle: four explicit steps, never collapsed
+
+```bash
+# 1) Author — read the ticket (read-only), write a redacted ticket.md and a plan scaffold, STOP the turn.
+ticket_task.py plan PROJ-1234
+
+# 2a) Preview — validate the scope block, show canonical scope, per-repo baselines and the plan SHA-256.
+#     Writes nothing.
+ticket_task.py approve PROJ-1234
+
+# 2b) Activate — a separate step, only after a fresh explicit approval message.
+ticket_task.py approve PROJ-1234 --confirm
+
+# 2c) Optional branch — only after activation AND after the user approves the name.
+ticket_task.py suggest-branch PROJ-1234            # prints PROJ-1234-<slug>
+ticket_task.py branch PROJ-1234 --name PROJ-1234-<slug>
+
+# 3) Close — only after an explicit instruction to close.
+ticket_task.py close PROJ-1234 --confirm
+```
+
+Rules Claude must follow: `plan` always ends the turn; `plan` is never chained into
+`approve --confirm` in the same turn; **the `--confirm` flag is a mechanism, not proof of approval** —
+Claude never supplies it on its own initiative.
+
+## The plan has a machine-readable scope
+
+`implementation-plan.md` contains exactly one fenced ` ```json scope ` block — per affected git root,
+its canonical `path` and the `allowed_paths`:
+
+```json scope
+{
+  "service-a": {
+    "path": "service-a",
+    "allowed_paths": [
+      "service-a/src/adapters/source_x/http_source.py",
+      "service-a/tests/unit/test_source_x_http_source.py",
+      "service-a/tests/fixtures/source_x/**"
+    ]
+  }
+}
+```
+
+The matcher is deliberately tiny — three pattern kinds and nothing else:
+
+| Kind | Example |
+|---|---|
+| exact path | `service-a/tools/replay.py` |
+| directory prefix (trailing `/**` only) | `service-a/tests/fixtures/**` |
+| single star in the last segment | `service-a/tests/test_*.py` |
+
+Character classes, braces, negation, backslashes, absolute paths, `..`/`.` traversal and `**` anywhere
+else are rejected. `CLAUDE.md`, `.claude/**` and deployment environment files are denylisted and refused
+at approval. Every requirement in the plan must trace to the ticket's acceptance criteria;
+architecture documents are context, never a source of scope.
+
+## The ticket snapshot is a whitelist
+
+`ticket.md` persists only: key, summary, description, acceptance criteria, links and retrieval time —
+all redacted. Reporter, assignee, contact fields, comments and custom fields are never written to disk.
+
+## Activation writes the mode file
+
+`approve --confirm` writes `.claude/runtime/mode.json` atomically: ticket, plan path, plan SHA-256,
+approval time, and per root a baseline commit, the baseline `git status` and the allowed paths. From
+that moment the [scope guard](/claude/hook-scope-guard/) lets exactly those paths through. Editing the
+plan changes its hash and re-locks everything until it is re-approved.
+
+## Surgical successors to re-approval
+
+Re-running `approve --confirm` would rebuild the ticket state from scratch, so two narrower commands
+exist; both keep stages, approvals and counters:
+
+- `reanchor [--confirm]` — the workspace received unrelated work; move the baseline past it. Refuses
+  if a commit touched a claimed path; `--ack-claimed` adopts it after a human says whose work it is.
+- `amend [--confirm]` — the plan was edited (say, one missing file); keep existing baselines, capture a
+  baseline only for a newly added root.
+- `reactivate --confirm` — the mode file is gone but state is intact (reopening a closed ticket).
+
+## Guarantees
+
+- Issue tracker: read-only (`view`). No comment, transition or create.
+- Git: read-only (`status`, `rev-parse`) except the additive branch creation after name approval. No
+  commit, push, reset, clean, stash, force or branch deletion.
+- Application files are never written by this skill.
+- Timestamps are generated internally — Claude never passes one.
+
+## Why it matters
+
+Most agent mishaps start with an unclear scope. Here the scope is a parsed, validated, hashed artifact
+that a hook enforces on every write — and the human approves *that* artifact, not a paragraph of prose.

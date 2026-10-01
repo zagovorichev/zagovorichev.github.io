@@ -1,0 +1,63 @@
+---
+title: "ticket-review-auditor — independently verifying every review finding"
+description: "Re-opens each cited line, checks the failure path and the acceptance-criteria link, and assigns valid, weak, invalid or duplicate. Uncertainty is never valid."
+kind: skill
+track: delivery
+order: 14
+tags: [skill, code-review, verification]
+date: 2026-10-01
+---
+
+**Stage 4 of the [pipeline](/claude/ticket-pipeline-overview/).** Read-only for every repository;
+writes only `review-audit.json`. It must not triage, decide what to fix, or fix anything.
+
+## For every finding
+
+- re-open the cited file and lines and verify the changed behaviour;
+- verify the relationship to the acceptance criteria and the failure path;
+- check the severity;
+- detect duplicates — same root cause, different wording;
+- reject unsupported impact language and keep the separate confidence dimensions separate.
+
+## Verdicts
+
+| Verdict | Meaning |
+|---|---|
+| `valid` | verified, reproducible, relevant |
+| `weak` | points at something real but the evidence or impact is insufficient |
+| `invalid` | wrong, or not supported by the code or the plan |
+| `duplicate` | same root cause as another finding (`duplicate_of` set) |
+
+**Uncertainty is not valid.** Missing evidence means `weak` or `invalid`.
+
+```json
+{
+  "finding_id": "R1",
+  "verdict": "valid|weak|invalid|duplicate",
+  "reason": "…",
+  "verified_evidence": ["…"],
+  "unsupported_claims": ["…"],
+  "severity_assessment": "appropriate|overstated|understated",
+  "risk_if_applied": "low|medium|high",
+  "duplicate_of": null
+}
+```
+
+## Mechanical checks
+
+```bash
+ticket_review_auditor.py preflight PROJ-1234
+ticket_review_auditor.py write PROJ-1234 --verdicts verdicts.json
+```
+
+The tool verifies that every `finding_id` exists, that each finding is audited **exactly once** (none
+skipped, none twice), that `duplicate_of` appears only on duplicates and never points at itself — and it
+never modifies the review file.
+
+## Why a second opinion is a separate stage
+
+Asking one prompt to both find and judge problems produces either timid reviews or noisy ones. Splitting
+the roles lets the reviewer be thorough and the auditor be strict. In practice this is where most
+"plausible but wrong" findings die — before anyone spends time fixing them.
+
+Next: [ticket-triage](/claude/skill-ticket-triage/) classifies only what survived.

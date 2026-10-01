@@ -1,0 +1,78 @@
+---
+title: "ticket-implementer — the smallest change, previewed before a single edit"
+description: "Two-phase implementation: fail-closed preflight and a written preview, then — only after a fresh approval — edits confined to allowed paths and a machine-generated results report."
+kind: skill
+track: delivery
+order: 12
+tags: [skill, implementation, approvals]
+date: 2026-10-01
+---
+
+**Stage 2 of the [pipeline](/claude/ticket-pipeline-overview/), gate B.** Applies the *smallest* change
+that satisfies the approved plan, inside the plan's `allowed_paths`. Never commits, pushes or touches
+the issue tracker.
+
+## Hard preconditions (the tool refuses otherwise)
+
+- an active mode file bound to **this** ticket and a matching ticket snapshot;
+- a valid approved plan whose SHA-256 still matches the mode file, and a scope block that agrees with
+  the recorded state;
+- `ticket-task` completed in the per-ticket state;
+- for every affected repository, `HEAD` equals the recorded baseline and the working tree matches the
+  baseline status — no unexplained drift.
+
+## Phase 1 — preview, no writes
+
+```bash
+ticket_implementer.py preflight PROJ-1234   # checks everything above, reports drift, writes nothing
+```
+
+Then Claude:
+
+1. reads architecture docs **for context only**;
+2. reads the actual source files it intends to change;
+3. writes an **implementation preview** in chat — files to change (all inside `allowed_paths`), intended
+   behaviour, expected tests, explicit non-goals;
+4. **stops**. The preview is not approval.
+
+## Phase 2 — after a fresh approval
+
+```bash
+ticket_implementer.py preflight PROJ-1234          # re-check: nothing drifted while waiting
+# edits via Edit/Write — the PreToolUse hook confines them to allowed_paths
+ticket_implementer.py report PROJ-1234 --narrative narrative.json --complete
+```
+
+The narrative is the only part Claude authors:
+
+```json
+{
+  "behaviour_implemented": "one paragraph traced to the acceptance criteria",
+  "deviations_from_plan": [],
+  "unresolved_questions": [],
+  "tests_not_yet_run": ["service-a/tests/unit/test_source_x.py"]
+}
+```
+
+Everything factual in `implementation-results.md` — files changed, before/after status, in-scope
+confirmation — is **recomputed by the tool from git**, so the report cannot overstate what was done.
+`report` refuses and writes nothing if any changed path is outside scope or `HEAD` moved.
+
+## Write restrictions
+
+- Only planned paths; never an unplanned file.
+- Never `.claude/`, `CLAUDE.md` or deployment environment files.
+- No scope broadening, no modernizing unrelated legacy code, no contract/schema/external-behaviour
+  changes unless the plan requires them.
+- No commit, push, reset, clean or stash.
+
+## Reruns invalidate downstream
+
+Re-running a completed implementer needs `--rerun` (the proof of a fresh approval) and marks review,
+audit and triage **stale** — their artifacts stay on disk for comparison.
+
+## Design notes
+
+- The preview is a cheap place to catch a wrong approach; an edit is an expensive one.
+- Splitting "what I did" (machine-computed) from "what I meant" (model-written narrative) keeps reports
+  honest without slowing the model down.

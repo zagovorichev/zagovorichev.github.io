@@ -1,0 +1,80 @@
+---
+title: "/mr-review — diff-first merge request review with verified findings only"
+description: "A host-agnostic GitLab review command: fetch the diff with git, filter noise, chase each suspicion with targeted lookups, report only verified failures, and optionally post them as anchored notes."
+kind: skill
+track: standalone
+order: 41
+tags: [skill, code-review, gitlab]
+date: 2026-10-01
+---
+
+**Standalone.** `/mr-review <IID>` reviews a merge request for correctness bugs and prints a concise
+local report. `--verbose` expands every dismissed suspicion; `--comment` posts verified findings to the
+MR. The flags combine.
+
+## Host-agnostic by construction
+
+Never assume a public host. `glab` resolves host and project from the repository's remote, so the
+command always runs inside the repo, never passes a hard-coded host and never builds URLs by hand. If
+`git rev-parse` or the remote lookup fails, it stops instead of guessing.
+
+## Workflow
+
+1. **Preflight** — inside a git repo; print the remote that will be used.
+2. **Metadata** — title, description, source and target branches and SHAs via `glab mr view`. If the
+   installed version lacks a flag, check `--help` once instead of hard-coding it.
+3. **Diff via git, before reading anything else** — cheaper and composable:
+
+```bash
+git fetch origin merge-requests/<IID>/head:mr-<IID>
+git fetch origin <target>
+git diff origin/<target>...mr-<IID>
+git diff --name-status origin/<target>...mr-<IID>
+```
+
+4. **Filter noise** — lock files, generated output, vendored code and whitespace-only changes
+   (`git diff -w` is empty) are skipped *and listed as skipped*, never silently omitted.
+5. **Review the diff first.**
+6. **Lazy context** — every extra read traces back to one specific suspicion. Preference order: `rg` for
+   a symbol or caller, `git show` for history, a narrow `git diff`, a targeted ranged read, existing
+   tests for the touched path. Reading a whole file "because it is in the MR" is not allowed.
+7. **Verify before reporting** — each suspicion is either *dismissed* (one line: what looked wrong,
+   what was checked, why it is fine) or *verified* with a concrete failure scenario. Unconfirmed
+   suspicions are dismissed, not downgraded into low-confidence findings.
+
+## Focus and avoid
+
+Focus: bugs and regressions, business logic, error handling, null handling, concurrency, security, API
+compatibility, data consistency, resource leaks, missing tests for changed behaviour.
+Avoid: style, formatting, speculation, pre-existing problems, unrequested refactors.
+
+## Finding format with an anchor
+
+```text
+[HIGH] path/to/file:line
+Attach to: path/to/file — new line 87 (+ added): `retry_count = 0`
+Explanation: …
+Failure scenario: …
+Suggested fix: …
+Suggested comment: …
+```
+
+`Attach to` is the exact diff line a reviewer clicks in the MR — new-file numbering for added and
+context lines, old-file numbering for removed ones — derived from hunk headers and quoted so the anchor
+can be checked at a glance.
+
+## The report
+
+MR title and diff size, the review scope (changed files, areas reviewed, extra context inspected),
+counts of verified findings and dismissed suspicions, the one-line dismissals, the findings, and whether
+anything was posted. With `--comment`, one note per verified finding — and if there are none, one note
+saying so, so the review is visible either way. Without the flag, nothing is ever written to the MR.
+
+A notable instruction: **no running tallies**. Counts fall out of the two lists at the end; the model is
+told not to spend tool calls producing diagnostic numbers instead of reviewing.
+
+## Why it works
+
+Most AI reviews fail by volume: twenty plausible comments, two real. Separating *suspicion* from
+*finding* and publishing the dismissed list makes the review both shorter and auditable — you can see
+what was considered and why it was rejected.

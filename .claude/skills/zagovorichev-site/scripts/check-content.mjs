@@ -27,6 +27,8 @@ for (const dir of ['guides', 'news', 'claude']) {
     if (data.tags && !Array.isArray(data.tags)) errors.push(`${where}: tags must be a list`);
     if (dir === 'claude' && !['claude-md', 'skill', 'command', 'hook', 'workflow'].includes(data.kind))
       errors.push(`${where}: kind must be claude-md | skill | command | hook | workflow`);
+    if (dir === 'claude' && data.track && !['overview', 'discovery', 'delivery', 'standalone', 'guardrails'].includes(data.track))
+      errors.push(`${where}: track must be overview | discovery | delivery | standalone | guardrails`);
     if (dir === 'guides') guides.add(file.replace(/\.mdx$/, ''));
   }
 }

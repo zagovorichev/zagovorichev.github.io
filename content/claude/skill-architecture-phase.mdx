@@ -1,0 +1,105 @@
+---
+title: "/architecture-phase — reverse engineering legacy code one bounded phase at a time"
+description: "A user-invoked command that runs exactly one discovery phase from a catalog, with evidence-carrying JSON artifacts, deterministic IDs, validators and a hard stop at the end."
+kind: skill
+track: discovery
+order: 20
+tags: [skill, architecture, reverse-engineering]
+date: 2026-10-01
+---
+
+**Discovery track.** Builds an evidence-based architecture model of legacy repositories without
+changing them. One invocation = one phase, then stop. Front matter that shapes its behaviour:
+
+```yaml
+disable-model-invocation: true   # only the human can start a phase
+argument-hint: "<phase>"
+allowed-tools: Read Grep Glob Bash   # no Edit/Write on source; artifacts go through Bash-run tools
+model: opus
+```
+
+## Preconditions
+
+1. Read `CLAUDE.md`, the canonical `analysis/state.json` and the phase catalog.
+2. The requested phase must exist in the catalog.
+3. No *other* phase may be `in_progress` — if one is, report the conflict and recommend
+   [`/architecture-checkpoint`](/claude/skill-architecture-checkpoint/) instead of starting a second one.
+
+## The phase catalog
+
+Each phase declares an objective, what is **included** and **excluded**, required inputs, expected
+outputs and completion conditions. The catalog in this setup:
+
+| Phase | Produces |
+|---|---|
+| `imports` | internal and cross-repository imports, dynamic module loading (`importlib`, string paths, config) |
+| `runtime` | deployable processes and how they start |
+| `messaging` | broker exchanges, queues, routing keys, consumers and publishers |
+| `datastores` | databases and caches, who reads and writes what |
+| `http` | inbound routes and outbound integrations |
+| `security` | authentication mechanisms, access rights, secrets handling |
+| `configuration` | where configuration comes from and how it resolves |
+| `dead-code` | candidates classified as confirmed unused, likely unused, dynamically reachable, externally invoked or unresolved |
+| `normalization` | the canonical node and edge model built from all previous JSON |
+| `diagrams` | Mermaid diagrams generated **only** from normalized nodes and edges |
+| `final-report` | delegated to [`/architecture-finalize`](/claude/skill-architecture-finalize/) |
+| `review-corrections` | applies accepted findings of an independent review, with a whitelist of artifacts it may touch |
+
+Exclusions matter as much as inclusions: the `imports` phase, for example, explicitly excludes broker
+topology, HTTP behaviour, database ownership and dead-code conclusions — those belong to their own
+phases. And dead code is never declared dead "solely because static imports do not reference it".
+
+## Read less, on purpose
+
+Only artifacts relevant to the phase are read. Source code is opened only after the missing evidence is
+named — before reading, Claude states which claim needs evidence, which repository may hold it and the
+smallest likely file set. One sequential pass, no agents, no broad discovery.
+
+## The artifact contract
+
+Every JSON artifact uses one envelope:
+
+```json
+{"schema_version": "1.0", "artifact_type": "…", "generated_from": [], "entities": [], "unresolved": []}
+```
+
+Every entity carries `id`, `name`, `repository`, `confidence` and `evidence[]`; every evidence item
+carries `repository`, `file`, `line_start`, `line_end`, `evidence_type` and a factual `summary`.
+Confidence is one of `confirmed | probable | possible | unresolved`.
+
+IDs are **stable and semantic** — lowercase, deterministic, independent of discovery order —
+`<entity-type>:<repository>:<qualified-name>`, e.g. `process:service-a:scheduler-worker` or
+`queue:shared:refresh-jobs`. References must point at existing IDs; an unknown target becomes an
+explicit unresolved entity, never a guessed ID. Ordering is deterministic (entities by id, edges by
+source/target/type, evidence by repository/file/line), so reruns produce clean diffs.
+
+## Validation before completion
+
+```bash
+python3 "${CLAUDE_SKILL_DIR}/scripts/validate-state.py" analysis/state.json
+python3 "${CLAUDE_SKILL_DIR}/scripts/validate-artifacts.py" . <phase>
+```
+
+The artifact validator checks schema versions and types, unique IDs, allowed confidence values, complete
+evidence items, entities that actually have evidence, references that resolve, deterministic ordering,
+Mermaid files that start with a valid declaration and reference only known IDs, and that every output
+the catalog promises exists. Errors are fixed inside the phase scope — **never by deleting unresolved
+evidence to make validation pass**.
+
+## State transitions
+
+Before work: phase `in_progress`, `current_phase` set. On success: `completed`, removed from remaining
+phases, `next_phase` computed, checkpoint updated. Otherwise: `partial`, unresolved evidence kept, no
+claim of completion.
+
+## Response, then stop
+
+Phase status · files created · files updated · validation results · unresolved items · recommended next
+phase. Then the command ends — it never rolls into the next phase on its own.
+
+## What makes it work
+
+- A catalog turns "understand the system" into a sequence of answerable questions.
+- Evidence with line ranges makes every claim checkable by a reviewer.
+- Deterministic IDs and ordering turn reruns into readable diffs instead of noise.
+- `unresolved` is a normal result, so the model has no reason to guess.

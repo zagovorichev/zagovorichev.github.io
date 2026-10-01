@@ -1,0 +1,80 @@
+---
+title: "Two generations of a Claude workflow: from prompt-only roles to an enforced pipeline"
+description: "What changed between a first setup of role skills described in prose and a second one backed by a Python driver, hooks and 450+ tests — and which ideas from the first are worth bringing back."
+kind: workflow
+track: overview
+order: 3
+tags: [workflow, lessons, skills]
+date: 2026-10-01
+---
+
+Both setups split work into roles — implement, review, audit, triage, fix, test. The difference is
+**where the rules live**.
+
+## Generation 1: roles as prompts
+
+The first setup, on a TypeScript service, had about ten skills, each a well-written `SKILL.md`:
+implementer, reviewer, review auditor, triage helper, fixer, QA, refactorer, an orchestrator, plus two
+domain skills (an adapter-vs-vendor-documentation audit and a runtime-version manager). Enforcement was
+light: two shell one-liners in `PreToolUse(Bash)` blocked `git commit`/`git push` and Jest flags that
+bypass the 100% coverage threshold; lint ran after every edit and a type check at the end of the session.
+
+What worked well:
+
+- clear role boundaries ("your only job is…") and explicit **hard stops**;
+- review findings tied to a spec reference *and* a code location; "No findings" as a valid answer;
+- a strict auditor ("if unsure — do not accept") and **human-owned triage**: the helper only suggested;
+- QA rules that tests must fail on the broken code and use the smallest distinguishing boundary value;
+- an orchestrator with mandatory steps, retry limits and a fixed per-step report format.
+
+What hurt:
+
+- **state lived in the conversation** — a new session did not know where the workflow stood;
+- "the user approved" was something the model inferred;
+- scope was a sentence ("do not touch unrelated files"), not a list a tool could check;
+- regex hooks over the raw command string were easy to sidestep (`git -C … commit`).
+
+## Generation 2: roles plus a machine
+
+The second setup keeps the role idea but moves everything that must be exact out of prose
+([overview](/claude/ticket-pipeline-overview/)):
+
+| Concern | Generation 1 | Generation 2 |
+|---|---|---|
+| Workflow state | the chat | per-ticket `state.json`, atomic writes, explicit prerequisites |
+| Approval | "user said yes" (inferred) | stage-specific, single-use, **hash-bound** records |
+| Scope | prose | a parsed `json scope` block, enforced by a [fail-closed hook](/claude/hook-scope-guard/) |
+| Git safety | regex on command prefix | a [command parser](/claude/hook-deny-git-writes/) + permission denylist |
+| Reports | model-written | facts recomputed from git; the model writes only the narrative |
+| Drift | not handled | baselines per repository, `reanchor`, `amend-plan` |
+| Loops | "max 3 fix cycles" in text | counters in state, recorded resets |
+| Confidence | one severity word | separate dimensions; `blocked` and `unresolved` are first-class |
+| Tests of the workflow itself | none | 450+ unit and end-to-end tests |
+
+## Ideas worth bringing back from generation 1
+
+These exist in the first setup and are missing or weaker in the second:
+
+1. **A refactorer role** — behaviour-preserving changes only, at most three per run, "when in doubt, do
+   nothing", bugs reported instead of fixed. Generation 2 has no safe lane for clean-up work.
+2. **Auditing external findings** — the old auditor validated Copilot and human review comments too.
+   The new auditor only audits its own reviewer's output; pointing it at incoming MR comments would reuse
+   the same strictness.
+3. **Human-confirmed triage** — the model *suggesting* classifications and the human deciding is a
+   stronger gate than a model-written triage followed by later approvals.
+4. **"Same issue unresolved after two cycles → blocked"** — a semantic stop in addition to numeric loop
+   caps.
+5. **Anti-cheating test hooks** — blocking flags that skip tests or lower coverage thresholds is cheap
+   and catches a real failure mode of agents under pressure to make tests green.
+6. **Fail-before / pass-after evidence** — the old QA required showing that a regression test fails on
+   the broken code; recording that in the QA artifact would strengthen the verdict.
+7. **Post-edit lint and end-of-session checks** as hooks — fast feedback without spending a stage on it.
+8. **Domain audit skills** — "compare our adapter against the vendor documentation" and "sync every
+   runtime-version pin" were among the most reused skills: narrow, repeatable, high value.
+9. **"Do not read the gold-standard report"** when re-running an audit to test the skill itself — a
+   simple trick against answer leakage.
+
+## The lesson
+
+Prompts are good at describing judgement and bad at guaranteeing invariants. Put judgement in
+`SKILL.md`, put invariants in code, and connect them through files the human can read.

@@ -1,0 +1,45 @@
+---
+title: "/architecture-checkpoint — saving discovery state before a session ends"
+description: "A small command that persists and validates the current phase without doing any new discovery, so the next session can resume from an honest state."
+kind: skill
+track: discovery
+order: 21
+tags: [skill, architecture, state]
+date: 2026-10-01
+---
+
+**Discovery track.** Long reverse-engineering phases outlive a single session — context fills up, the
+day ends, something else comes up. `/architecture-checkpoint` is the clean way to stop.
+
+```yaml
+disable-model-invocation: true
+allowed-tools: Read Grep Glob Bash
+model: opus
+```
+
+## Steps
+
+1. Read `analysis/state.json` and determine the current phase.
+2. Inspect **only** artifacts listed for that phase.
+3. **Do not continue discovery** and do not open new application source files.
+4. Preserve all completed work already on disk.
+5. Validate the state file and the current phase's artifacts.
+6. Set the phase to `completed` only if every completion condition holds; otherwise `partial`.
+7. Clear `current_phase`, update `last_checkpoint`.
+8. Never erase unresolved evidence.
+
+```bash
+python3 .claude/skills/architecture-phase/scripts/validate-state.py analysis/state.json
+```
+
+## Report
+
+Checkpoint status · current or partial phase · artifacts safely written · validation failures ·
+unresolved items · **the exact command to resume**. Then stop.
+
+## Why a dedicated command
+
+Without it, "let's stop here" turns into either a phase silently marked complete or a phase left
+`in_progress` forever, which then blocks [`/architecture-phase`](/claude/skill-architecture-phase/) from
+starting anything else. A checkpoint makes the honest intermediate state — `partial`, with what is
+missing written down — a normal outcome.

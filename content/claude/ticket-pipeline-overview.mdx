@@ -1,0 +1,126 @@
+---
+title: "The delivery pipeline end to end: eight roles, five gates, one state file"
+description: "How a ticket travels from plan to pull-request handoff with Claude Code: role skills, a Python driver that owns state, hash-bound approvals, drift detection and loop caps."
+kind: workflow
+track: overview
+order: 2
+tags: [workflow, pipeline, approvals]
+date: 2026-10-01
+---
+
+This is the map for the rest of the section. Development mode of the
+[two-mode workspace](/claude/claude-md-two-mode-workspace/) is a pipeline of **role skills**. Each role
+does one kind of thinking — plan, implement, review, audit, triage, fix, verify, hand off — and a small
+Python driver decides what is allowed to happen next.
+
+> Names are anonymized: the skills are shown with a neutral `ticket-` prefix and ticket keys as `PROJ-1234`.
+
+## The stages
+
+```text
+ticket-task → ticket-implementer → ticket-review → ticket-review-auditor → ticket-triage
+           → (optional ticket-fixer → review → audit → triage again) → ticket-qa → ticket-pr → close
+```
+
+| Stage | Thinks about | Writes | Can touch application code? |
+|---|---|---|---|
+| [task](/claude/skill-ticket-task/) | ticket → bounded plan with an explicit file scope | `ticket.md`, `implementation-plan.md`, state | no |
+| [implementer](/claude/skill-ticket-implementer/) | smallest change that satisfies the plan | code in `allowed_paths`, `implementation-results.md` | yes, after gate B |
+| [review](/claude/skill-ticket-review/) | concrete defects in the diff | `review-findings.json` | no |
+| [review-auditor](/claude/skill-ticket-review-auditor/) | is each finding actually true? | `review-audit.json` | no |
+| [triage](/claude/skill-ticket-triage/) | what to do with each *valid* finding | `triage.json` | no |
+| [fixer](/claude/skill-ticket-fixer/) | smallest fix for `apply_now` findings | code in `allowed_paths`, `fix-results.md` | yes, after gate C |
+| [qa](/claude/skill-ticket-qa/) | does it meet every acceptance criterion? | tests (after gate D), `qa-results.md` | tests and fixtures only |
+| [pr](/claude/skill-ticket-pr/) | a reviewable handoff per repository | `final-summary.md` + **printed** git commands | no |
+
+The [orchestrator](/claude/skill-ticket-workflow/) drives all of them. The user never invokes a role by
+hand; they say "start", "continue" and approve things.
+
+## Who does what: model vs driver
+
+The split is the core design decision:
+
+- **Claude** does the reasoning each role's `SKILL.md` describes — real review judgement, real triage,
+  real QA — and writes the role's *input* as a JSON file.
+- **The driver** (`ticket_workflow.py` plus a shared library) owns everything that must be exact:
+  state transitions, the next legal action, preconditions, schema validation, diffs, drift detection,
+  approval records and reporting. It runs the role's CLI through a guarded dispatcher with an argument
+  allowlist, no `shell=True`, timeouts and redacted output.
+
+So Claude never "marks a stage done". It hands its result to the driver, which validates it, installs
+the artifact and records the outcome — or refuses.
+
+## Approval gates
+
+Five gates need a human; two more categories are simply never done by the pipeline:
+
+| Gate | Before | Command |
+|---|---|---|
+| **A** | activating development mode for an approved plan | `approve-plan` |
+| **B** | the implementer writes application code | `approve-implementation --preview <file>` |
+| **C** | the fixer writes code | `approve-fixes --preview <file> [--findings R1,R3]` |
+| **D** | QA creates or edits tests/fixtures | `approve-tests --preview <file>` |
+| **E** | closing while anything is still uncommitted | `approve-close --ack-uncommitted` |
+| F | any git mutation | never executed — printed for the human at handoff |
+| G | any issue-tracker mutation | only via a separate skill, one explicit "yes" per write |
+
+Approvals are **stage-specific, single-use and hash-bound**. The approval stores the path and SHA-256
+of the preview it approved, and every `next` re-hashes it. Edit the preview after approving it and the
+approval silently disappears: the next action goes back to "create preview". Claude is told never to
+infer approval from its own text, from a `--confirm` flag, from `next`, or from an earlier approval —
+only a new explicit user message counts.
+
+## State
+
+Each ticket has `analysis/development/<KEY>/state.json`, written atomically (serialize → round-trip
+validate → temp file in the same directory → `os.replace`), so a failed validation can never leave a
+half-written state behind.
+
+Stages have explicit prerequisites (not "the previous one in the list" — QA may skip the optional
+fixer) and six statuses: `pending`, `in_progress`, `completed`, `failed`, `blocked`, `stale`.
+Re-running a stage marks everything downstream **stale**; nothing is deleted. The fixer always stales
+the review chain, so review, audit and triage must run again on the fixed code before QA unlocks.
+
+The ephemeral **mode file** (`.claude/runtime/mode.json`, git-ignored) is what actually opens
+application repositories for writing. It binds the ticket, the plan path and the plan's SHA-256, and
+lists per repository a baseline commit, the baseline `git status` and the `allowed_paths`. Absent,
+malformed or hash-stale ⇒ discovery mode, every app write blocked.
+
+## Drift: what blocks and what re-anchors
+
+Between stages, other things happen in the workspace. The driver compares each git root against its
+baseline with one rule: **drift is fatal only when a commit touched a path the ticket claims**,
+because only then is the ticket's own change no longer attributable. Everything else is
+`reanchor_required` and one command moves the baseline past it — without ever adopting a claimed path,
+so `git diff <new baseline> -- P` equals `git diff <old baseline> -- P` for every claimed `P`.
+
+Two kinds of roots are treated differently: in an **application repository** an uncommitted change
+outside the scope is fatal (`recovery_required`, a human decides); in the **workspace root** (tooling,
+docs, other tickets' folders) it just needs a re-anchor. After the PR stage completes, a commit is the
+expected handoff rather than drift.
+
+## Changing the plan mid-flight
+
+Editing the approved plan invalidates its hash and re-locks the repositories. `amend-plan` is the way
+through: re-validate the scope, refuse if an already-changed path would fall out of it, rebind the mode
+file, record a fresh plan approval. Completed stages survive. If the design changed but not the file
+list, `--rework` marks implementation and everything after it stale and returns to gate B.
+
+## Loops have caps
+
+`max_fixer_cycles = 5`, `max_review_reruns = 8`. Review gets more reruns on purpose: every fixer cycle
+stales the review chain, and an equal cap would strand the last fixer cycles behind a review that
+already refused. Hitting a cap yields `recovery_required`, never an endless loop; `reset-counters` is
+the one explicit way past it and is itself recorded.
+
+## Why it is built like this
+
+- **The model reasons, the code decides.** Anything that must be exact — hashes, diffs, transitions —
+  lives in tested Python (the setup has 450+ unit and end-to-end tests), not in prompt prose.
+- **Every write is attributable.** Baselines plus path-level scope mean the final diff contains the
+  ticket and nothing else.
+- **Stopping is cheap, continuing is explicit.** The default at every boundary is to stop and report.
+- **Nothing is silently lost.** Stale artifacts stay on disk; state records why they went stale.
+
+Read next: [the orchestrator](/claude/skill-ticket-workflow/) or start at the first stage,
+[`ticket-task`](/claude/skill-ticket-task/).
