@@ -1,0 +1,179 @@
+---
+title: "SDLC"
+subtitle: "Software development life cycle frameworks"
+description: "Software Development Life Cycle or Software Development Process followed for a software project within a software organization. Detailed plan of the project."
+icon: refresh
+tags: [process]
+date: 2022-09-20
+---
+
+**Software Development Life Cycle (SDLC)** — the phases a project undergoes end-to-end — to manage resources, control costs, anticipate possible risks, and track the progress of each process required to develop a high-quality product. Two of the most common are *Waterfall* and a *Scrum-based Agile* SDLC.
+
+Software development plan always has frozen date and has requirements which are continuously changing.
+
+### Phases of SDLC
+
+- Requirements.<br/> <Muted>Definition of resources, requirements and expectations of the project.</Muted>
+- Design.<br/> <Muted>Design of the system. Elements, components, security level, modules, architecture, various interfaces, and data types.</Muted>
+- Software Development.<br/> <Muted>Implementation in a real product.</Muted>
+- Testing.<br/> <Muted>Ensuring that the system works as expected.</Muted>
+- UAT/Staging (User Acceptance Testing).<br/> <Muted>The business is testing.</Muted>
+- Maintenance.<br/> <Muted>Support for production.</Muted>
+
+### Types of possible environments.
+
+![Servers](/images/articles/sdlc/Servers.jpg)
+
+- Production Server.<br/> <Muted>Live environment for the solution.</Muted>
+- UAT (User Acceptance Testing) / Staging - Pre-Production.<br/> <Muted>Environment with the same configuration and resources as production.</Muted>
+- Test.<br/> <Muted>Development branch of repository. (When Master is branch for pre-prod and prod with release version).</Muted>
+- Nightly.<br/> <Muted>If Test is not build automatically when dev merged, than nightly can be built at night.</Muted>
+- PullRequest / Feature.<br/> <Muted>Usually it is a docker container within portainer. When PR created - container with this branch deployed.</Muted>
+- Dev.<br/> <Muted>development server, local environment for development. Each developer has own dev environment.</Muted>
+
+## SDLC frameworks
+
+### Waterfall
+
+Winston Royce inspired development to use Waterfall in 1970. Waterfall because his diagram looked like water flowing down rocks. Even though it was not what he was recommending.
+
+Steps of the Waterfall project:
+
+1. The Meeting.<br/> <Muted>When someone decided to create something (once)</Muted>
+2. The Analysis Phase.<br/> <Muted>Limited time for analyse, we were supposed to be done by date, so we are done.</Muted>
+3. The Design Phase.<br/> <Muted>How many modules, how many teams, etc.</Muted>
+4. The Implementation Phase.<br/> <Muted>From coding to production.</Muted>
+
+Waterfall Problems
+
+1. Late Delivery.<br/> <Muted>Business can't see results until of the end of the development.</Muted>
+2. Frozen requirements.<br/> <Muted>Everything is documented and can't be changed.</Muted>
+
+Despite its drawbacks, there are times when a waterfall approach may still be the preferred approach, including when:
+
+- The project/requirements/customer demand is not prone to change
+- The project is small in scope
+- The speed of delivery is not a priority
+
+![Waterfall](/images/articles/sdlc/waterfall.jpg)
+
+### Spiral Model
+
+It is mix of waterfall and iterative approaches. Planning - defining. Risk Analysis - mitigate risks. Engineering - coding/testing/deploying. Evaluation - review + plan next iteration.
+
+### Rational Unified Process (RUP)
+
+**RUP** is a software development process framework. Artifacts, processes, templates, phases, disciplines.<br/> **4 phases:** Inception, Elaboration, Construction, Transition. Each phase is 1 or more waterfall iterations.
+
+About RUP:
+
+- Too customizable and heavy. Has plugins and technologies to learn.
+- Prescriptive.
+- Doesn't have TDD (Test-Driven Development) in best practices.
+
+Takeaways
+
+- Develop iteratively
+- Manage and change requirements
+- Continuously verify quality
+
+### Dynamic System Development Method
+
+DSDM Life Cycle
+
+1. Pre-project.<br/> <Muted>Analysis, feasibility, business case.</Muted>
+2. Project.<br/> <Muted>Iterative development, timeboxing.</Muted>
+3. Post-project.<br/> <Muted>Retrospective, Demo.</Muted>
+
+Takeaways
+
+- Timeboxing.<br/> <Muted>Each activity assign max timelimit which cannot be extended.</Muted>
+- MoSCoW prioritization.<br/> <Muted>Must, should, could and won't HAVE.</Muted>
+- Iterative and incremental approach.
+
+### Feature-Driven Development
+
+FDD - software is a collection of working features. Based on OOP.
+
+Takeaways
+
+- Features team.
+- Parallel development.
+- Tracking completion status.
+
+### Crystal Methods
+
+It is a family of methodologies. It allows calculate team size by the Criticality and pick method to solve this task.
+
+Takeaways
+
+- People-centric.
+- Frequent delivery.
+- Individual approach to the each project.
+- Automated tests, CI.
+
+### Scrum
+
+Scrum, or SCRUM, is a framework for project management (since 1986).<br/> Main Scrum document: [https://scrumguides.org/scrum-guide.html](https://scrumguides.org/scrum-guide.html)
+
+SCRUM designed for teams of ten or fewer members, who break their work into goals that can be completed within time-boxed iterations, called sprints, no longer than one month and most commonly two weeks.
+
+The scrum team assesses progress in time-boxed daily meetings of 15 minutes or fewer, called daily scrums (a form of stand-up meeting). At the end of the sprint, the team holds two further meetings: the sprint review which demonstrates the work done to stakeholders to elicit feedback, and sprint retrospective which enables the team to reflect and improve.
+
+A Scrum Master play the role of an Agile coach and facilitates removal of impediments in the path of the development team. Even though the Scrum Master has management responsibilities, they do not have administrative responsibilities over what the team does.
+
+Three Pillars of Scrum
+
+- Transparency.<br/> <Muted>All team members involved to all processes and activities required for a project.</Muted>
+- Inspection.<br/> <Muted>Review product and its quality with team and customer throughout the project.</Muted>
+- Adaptation.<br/> <Muted>Be always flexible.</Muted>
+
+Roles
+
+- Product owner. <br/> <Muted>Own product backlog - what's need to be build and in what order.</Muted>
+- Scrum master.<br/> <Muted>Practices, rules, events, remove barriers.</Muted>
+- Development team.<br/> <Muted>Everyone in the team (testers, devs, documenters, DBAs...).</Muted>
+
+DSM (Daily stand-up meeting / Daily SCRUM). Team sync-up.<br/> Each team member answers to 3QF (3 Question Format):
+
+- What did I do since the last dsm?
+- What am I planning/doing today?
+- Impediments?
+
+### Lean
+
+A collection of principles which was created to minimize waste of money. Visualisation of process to reduce it's cost. <Muted>Wasting time is None-value work; No gold planning; unnecessary process;</Muted>
+
+**Value Stream Map**
+
+- Identify areas of improvement.
+- Identify info flow, material flow, and time ladder.
+
+**Value Stream Mapping**
+
+- Lead Time.<br/> <Muted>Total time from request to delivery.</Muted>
+- Cycle Time.<br/> <Muted>Where some work is performed on the product. (backend)</Muted>
+
+Lean Principles
+
+- Learning
+- Decide as late as possible
+- Deliver as fast as possible
+- Empower the team
+- See the whole. (Big picture)
+
+### Kandban
+
+Kanban is based on the Lean Principles. It has core values: **Visualise your work** and **Limit work in progress**.
+
+Kanban has its Kanban-board, with tasks stored according to Little's Law: Don't take more than team can do.
+
+### XP — Extreme Programming
+
+It is collection of best practices for development. For example TDD or Pair programming.
+
+### Water Scrum Fall Paradigm
+
+- **Water.** <Muted>Busyness plan, budgeting, design, requirements, estimation.</Muted>
+- **SCRUM.** <Muted>Small SCRUM teams doing development.</Muted>
+- **Fall.** <Muted>Integration testing release.</Muted>

@@ -1,62 +1,136 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import matter from 'gray-matter';
+import {load as loadYaml} from 'js-yaml';
 import planned from '@/content/planned.json';
 
-const ARTICLES_DIR = path.join(process.cwd(), 'content', 'articles');
+const CONTENT = path.join(process.cwd(), 'content');
 
-export type ArticleMeta = {
+export type Post = {
   slug: string;
   title: string;
   subtitle?: string;
   description: string;
-  image?: string;
   date: string;
+  tags: string[];
+  icon?: string;
+  readingMinutes: number;
+  source: string;
 };
 
-export type Article = ArticleMeta & {source: string};
+export type PostMeta = Omit<Post, 'source'>;
 
-export type PlannedTopic = {title: string; description: string; image?: string};
+export type Video = {
+  title: string;
+  url: string;
+  date: string;
+  note?: string;
+  channel?: string;
+  tags: string[];
+  thumbnail?: string;
+};
 
-function readArticle(slug: string): Article {
-  const raw = fs.readFileSync(path.join(ARTICLES_DIR, `${slug}.mdx`), 'utf8');
-  const {data, content} = matter(raw);
-  if (!data.title || !data.description || !data.date) {
-    throw new Error(`content/articles/${slug}.mdx: frontmatter needs title, description and date`);
-  }
-  return {
-    slug,
-    title: data.title,
-    subtitle: data.subtitle,
-    description: data.description,
-    image: data.image,
-    // YAML parses bare dates into Date objects
-    date: data.date instanceof Date ? data.date.toISOString().slice(0, 10) : String(data.date),
-    source: content,
-  };
-}
+export type LinkItem = {
+  title: string;
+  url: string;
+  description: string;
+  note?: string;
+  guide?: string;
+  host: string;
+};
 
-export function getArticleSlugs(): string[] {
+export type LinkGroup = {category: string; items: LinkItem[]};
+
+export type PlannedTopic = {title: string; description: string; icon: string};
+
+// YAML parses bare dates into Date objects
+const toDate = (v: unknown) => (v instanceof Date ? v.toISOString().slice(0, 10) : String(v ?? ''));
+
+const byDateDesc = <T extends {date: string}>(a: T, b: T) => b.date.localeCompare(a.date);
+
+function readPosts(dir: 'guides' | 'news'): Post[] {
+  const full = path.join(CONTENT, dir);
+  if (!fs.existsSync(full)) return [];
   return fs
-    .readdirSync(ARTICLES_DIR)
+    .readdirSync(full)
     .filter((f) => f.endsWith('.mdx'))
-    .map((f) => f.replace(/\.mdx$/, ''));
-}
-
-export function getArticle(slug: string): Article {
-  return readArticle(slug);
-}
-
-/** Newest first; articles published the same day keep alphabetical order. */
-export function getArticles(): ArticleMeta[] {
-  return getArticleSlugs()
-    .map((slug): ArticleMeta => {
-      const {title, subtitle, description, image, date} = readArticle(slug);
-      return {slug, title, subtitle, description, image, date};
+    .map((file) => {
+      const slug = file.replace(/\.mdx$/, '');
+      const {data, content} = matter(fs.readFileSync(path.join(full, file), 'utf8'));
+      if (!data.title || !data.description || !data.date) {
+        throw new Error(`content/${dir}/${file}: frontmatter needs title, description and date`);
+      }
+      const words = content.split(/\s+/).filter(Boolean).length;
+      return {
+        slug,
+        title: data.title,
+        subtitle: data.subtitle,
+        description: data.description,
+        date: toDate(data.date),
+        tags: data.tags ?? [],
+        icon: data.icon,
+        readingMinutes: Math.max(1, Math.round(words / 200)),
+        source: content,
+      };
     })
-    .sort((a, b) => b.date.localeCompare(a.date) || a.slug.localeCompare(b.slug));
+    .sort((a, b) => byDateDesc(a, b) || a.slug.localeCompare(b.slug));
 }
 
-export function getPlannedTopics(): PlannedTopic[] {
-  return planned;
+const meta = ({source: _source, ...rest}: Post): PostMeta => rest; // eslint-disable-line @typescript-eslint/no-unused-vars
+
+export const getGuides = (): PostMeta[] => readPosts('guides').map(meta);
+export const getNews = (): PostMeta[] => readPosts('news').map(meta);
+
+export function getGuide(slug: string): Post {
+  const post = readPosts('guides').find((p) => p.slug === slug);
+  if (!post) throw new Error(`Unknown guide ${slug}`);
+  return post;
+}
+
+export function getNewsPost(slug: string): Post {
+  const post = readPosts('news').find((p) => p.slug === slug);
+  if (!post) throw new Error(`Unknown news post ${slug}`);
+  return post;
+}
+
+function readYaml<T>(file: string): T {
+  return loadYaml(fs.readFileSync(path.join(CONTENT, file), 'utf8')) as T;
+}
+
+function youtubeId(url: string): string | undefined {
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/);
+  return m?.[1];
+}
+
+export function getVideos(): Video[] {
+  const raw = readYaml<Array<Record<string, unknown>> | null>('videos.yaml') ?? [];
+  return raw
+    .map((v) => {
+      const url = String(v.url);
+      const id = youtubeId(url);
+      return {
+        title: String(v.title),
+        url,
+        date: toDate(v.date),
+        note: v.note as string | undefined,
+        channel: v.channel as string | undefined,
+        tags: (v.tags as string[] | undefined) ?? [],
+        thumbnail: id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : undefined,
+      };
+    })
+    .sort(byDateDesc);
+}
+
+export function getLinkGroups(): LinkGroup[] {
+  const raw = readYaml<Array<{category: string; items: Omit<LinkItem, 'host'>[]}> | null>('links.yaml') ?? [];
+  return raw.map((g) => ({
+    category: g.category,
+    items: g.items.map((i) => ({...i, host: new URL(i.url).hostname.replace(/^www\./, '')})),
+  }));
+}
+
+export const getPlannedTopics = (): PlannedTopic[] => planned;
+
+export function formatDate(date: string) {
+  return new Date(date).toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: 'numeric'});
 }

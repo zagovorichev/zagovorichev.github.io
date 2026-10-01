@@ -1,0 +1,17 @@
+# Videos I found useful. Newest first on the site (by date).
+# Fields:
+#   title:    video title
+#   url:      YouTube (or any) link; YouTube links get a thumbnail automatically
+#   date:     when I added it (YYYY-MM-DD)
+#   note:     what I learned / why it is worth watching
+#   tags:     optional list
+#   channel:  optional author/channel name
+#
+# Example:
+# - title: "Talk title"
+#   url: https://www.youtube.com/watch?v=VIDEO_ID
+#   channel: Conference name
+#   date: 2026-10-01
+#   note: Clear explanation of ...
+#   tags: [architecture]
+[]

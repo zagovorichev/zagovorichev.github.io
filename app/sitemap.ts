@@ -1,12 +1,14 @@
 import type {MetadataRoute} from 'next';
-import {getArticles} from '@/lib/content';
-import {site} from '@/lib/site';
+import {getGuides, getNews} from '@/lib/content';
+import {navOrder, sections, site} from '@/lib/site';
 
 export const dynamic = 'force-static';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {url: `${site.url}/`},
-    ...getArticles().map((a) => ({url: `${site.url}/article/${a.slug}/`, lastModified: a.date})),
+    ...navOrder.map((k) => ({url: `${site.url}${sections[k].href}`})),
+    ...getGuides().map((p) => ({url: `${site.url}/guides/${p.slug}/`, lastModified: p.date})),
+    ...getNews().map((p) => ({url: `${site.url}/news/${p.slug}/`, lastModified: p.date})),
   ];
 }

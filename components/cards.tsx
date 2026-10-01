@@ -1,0 +1,85 @@
+import Link from 'next/link';
+import {ArrowRight, ArrowUpRight, Clock, Play} from 'lucide-react';
+import {TopicIcon} from './icons';
+import {formatDate, type LinkItem, type PostMeta, type Video} from '@/lib/content';
+
+export function GuideCard({guide}: {guide: PostMeta}) {
+  return (
+    <Link href={`/guides/${guide.slug}/`} className="card guide-card" data-section="guides">
+      <span className="topic-tile">
+        <TopicIcon name={guide.icon} />
+      </span>
+      <h3>{guide.title}</h3>
+      <p className="muted clamp-3">{guide.description}</p>
+      <div className="card-meta">
+        <span>
+          <Clock size={14} /> {guide.readingMinutes} min
+        </span>
+        {guide.tags.slice(0, 2).map((t) => (
+          <span key={t} className="chip">
+            {t}
+          </span>
+        ))}
+      </div>
+    </Link>
+  );
+}
+
+export function NewsItem({post}: {post: PostMeta}) {
+  return (
+    <Link href={`/news/${post.slug}/`} className="news-item" data-section="news">
+      <time dateTime={post.date}>{formatDate(post.date)}</time>
+      <div>
+        <h3>{post.title}</h3>
+        <p className="muted">{post.description}</p>
+      </div>
+      <ArrowRight size={18} className="news-arrow" />
+    </Link>
+  );
+}
+
+export function VideoCard({video}: {video: Video}) {
+  return (
+    <a href={video.url} target="_blank" rel="noopener noreferrer" className="card video-card" data-section="videos">
+      <div className="video-thumb">
+        {video.thumbnail ? (
+          // eslint-disable-next-line @next/next/no-img-element -- external YouTube thumbnail
+          <img src={video.thumbnail} alt="" loading="lazy" />
+        ) : null}
+        <span className="play">
+          <Play size={22} fill="currentColor" />
+        </span>
+      </div>
+      <div className="video-body">
+        <h3>{video.title}</h3>
+        {video.channel && <span className="muted small">{video.channel}</span>}
+        {video.note && <p className="note">{video.note}</p>}
+      </div>
+    </a>
+  );
+}
+
+export function LinkCard({link, guideTitle}: {link: LinkItem; guideTitle?: string}) {
+  return (
+    <div className="card link-card" data-section="links">
+      <a href={link.url} target="_blank" rel="noopener noreferrer" className="link-main">
+        <span className="monogram" aria-hidden="true">
+          {link.title.charAt(0)}
+        </span>
+        <span>
+          <span className="link-title">
+            {link.title} <ArrowUpRight size={15} />
+          </span>
+          <span className="muted small">{link.host}</span>
+        </span>
+      </a>
+      <p className="muted">{link.description}</p>
+      {link.note && <p className="note">{link.note}</p>}
+      {link.guide && guideTitle && (
+        <Link href={`/guides/${link.guide}/`} className="related">
+          Related guide: {guideTitle}
+        </Link>
+      )}
+    </div>
+  );
+}

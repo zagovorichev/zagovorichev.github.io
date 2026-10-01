@@ -1,32 +1,8 @@
 [
-  {
-    "title": "Deployment to GitHub Pages",
-    "description": "A very easy way to publish your website for free, without a domain and with minimal effort. Let's take the example of a ReactJs application. But in general it is possible to use any framework.",
-    "image": "/images/cards/GitHubPages.png"
-  },
-  {
-    "title": "Deployment to Firebase Google",
-    "description": "You can also deploy your site for free in Firebase from Google.",
-    "image": "/images/cards/firebase.png"
-  },
-  {
-    "title": "Jenkins Agent",
-    "description": "Step-by-step instructions for setting up and installing Jenkins. Set up deployment of a proxy using Jenkins-Agent. Fully working environment on vagrant running Docker to run deployment there. Jenkins run on local Docker.",
-    "image": "/images/cards/jenkins.png"
-  },
-  {
-    "title": "Serverless framework",
-    "description": "How to use Serverless framework to deploy AWS Lambda functions with a non-standard stack: PHP8 + Bref.",
-    "image": "/images/cards/serverless.png"
-  },
-  {
-    "title": "Ansible",
-    "description": "Ansible as a tool for deploying projects.",
-    "image": "/images/cards/ansible.png"
-  },
-  {
-    "title": "AWS Glue",
-    "description": "Using AWS Glue to generate .xml reports on BigData.",
-    "image": "/images/cards/aws_glue.png"
-  }
+  {"title": "Deployment to GitHub Pages", "icon": "github", "description": "Publish a website for free, without a domain and with minimal effort — using a React/Next.js app as the example."},
+  {"title": "Deployment to Firebase", "icon": "flame", "description": "Another free hosting option: deploying a site to Google Firebase."},
+  {"title": "Jenkins Agent", "icon": "server", "description": "Installing Jenkins on local Docker and deploying through a Jenkins agent in a Vagrant environment."},
+  {"title": "Serverless framework", "icon": "cloud", "description": "Deploying AWS Lambda functions with a non-standard stack: PHP 8 + Bref."},
+  {"title": "Ansible", "icon": "settings", "description": "Ansible as a tool for deploying projects."},
+  {"title": "AWS Glue", "icon": "database", "description": "Using AWS Glue to generate XML reports on big data."}
 ]

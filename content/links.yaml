@@ -1,0 +1,93 @@
+# Useful websites, grouped by category.
+# Fields: title, url, category, description (what the site is), note (optional: what I found there), guide (optional: related guide slug)
+- category: Developer tools
+  items:
+    - title: Oh My Zsh
+      url: https://ohmyz.sh/
+      description: Framework for managing Zsh configuration with hundreds of plugins and themes.
+      note: The base of my terminal setup; the plugins I use are listed in the Zsh guide.
+      guide: zsh
+    - title: Powerlevel10k
+      url: https://github.com/romkatv/powerlevel10k
+      description: Fast and highly configurable Zsh theme.
+      guide: zsh
+    - title: zsh-autosuggestions
+      url: https://github.com/zsh-users/zsh-autosuggestions
+      description: Fish-like command suggestions for Zsh based on history and completions.
+      guide: zsh
+    - title: mkcert
+      url: https://github.com/FiloSottile/mkcert
+      description: Zero-config tool for locally trusted development HTTPS certificates.
+      guide: traefik
+    - title: Traefik Proxy
+      url: https://traefik.io/traefik/
+      description: Reverse proxy that routes traffic to Docker containers by host name.
+      guide: traefik
+    - title: Dockerizer
+      url: https://github.com/zagovorichev/dockerizer
+      description: My example setup of Traefik + Portainer + WhoAmI for local Docker development.
+      guide: traefik
+
+- category: Process & methodology
+  items:
+    - title: The Scrum Guide
+      url: https://scrumguides.org/scrum-guide.html
+      description: The official definition of Scrum from its creators.
+      guide: sdlc
+
+- category: Remote work & freelance
+  items:
+    - title: Upwork
+      url: https://www.upwork.com/
+      description: Large freelance marketplace for all kinds of projects.
+    - title: Toptal
+      url: https://www.toptal.com/
+      description: Network of screened freelance engineers and designers.
+    - title: LinkedIn Jobs
+      url: https://www.linkedin.com/jobs/
+      description: Job search on the largest professional network.
+    - title: Wellfound
+      url: https://wellfound.com/jobs
+      description: Jobs in startups (formerly AngelList Talent).
+    - title: We Work Remotely
+      url: https://weworkremotely.com/
+      description: Remote-only job board.
+    - title: Remotive
+      url: https://remotive.com/
+      description: Curated remote jobs in tech.
+    - title: Remote OK
+      url: https://remoteok.com/
+      description: Remote job board with salary filters.
+    - title: PeoplePerHour
+      url: https://www.peopleperhour.com/
+      description: Freelance marketplace with hourly and fixed-price projects.
+    - title: Fiverr
+      url: https://www.fiverr.com/
+      description: Marketplace for fixed-scope freelance services.
+    - title: Indeed
+      url: https://www.indeed.com/
+      description: General job search engine.
+    - title: Glassdoor
+      url: https://www.glassdoor.com/
+      description: Jobs together with company reviews and salaries.
+    - title: Dice
+      url: https://www.dice.com/
+      description: Tech-focused job board.
+    - title: Idealist
+      url: https://www.idealist.org/
+      description: Jobs and volunteering in non-profits.
+    - title: Dribbble
+      url: https://dribbble.com/
+      description: Design community and design jobs.
+    - title: Monster
+      url: https://www.monster.com/
+      description: General job board.
+    - title: Jobisjob
+      url: https://www.jobisjob.com/
+      description: Job search aggregator.
+    - title: CareerBuilder
+      url: https://www.careerbuilder.com/
+      description: Job board focused on the USA.
+    - title: Reed
+      url: https://www.reed.co.uk/
+      description: Job board focused on the UK.
