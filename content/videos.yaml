@@ -15,7 +15,9 @@
 #   note: Clear explanation of ...
 #   tags: [architecture]
 
-- title: "Video post by @HeyShobhan"
+- title: "Stanford lecture: how ChatGPT and Claude actually work"
   url: https://x.com/HeyShobhan/status/2100922290116481308
-  channel: "@HeyShobhan on X"
+  channel: "Shared by @HeyShobhan on X"
   date: 2026-10-01
+  note: The clearest explanation of how ChatGPT and Claude actually work. Useful whether you've never touched AI or have been using it every day for the past year.
+  tags: [claude, ai-agents]
