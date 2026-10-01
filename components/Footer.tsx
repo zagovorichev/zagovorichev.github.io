@@ -18,7 +18,7 @@ export default function Footer() {
             </a>
           </div>
         </div>
-        <div className="text-muted copyright">© {new Date().getFullYear()} blog-tree.github.io</div>
+        <div className="text-muted copyright">© {new Date().getFullYear()} Oleksandr Zagovorychev</div>
       </div>
     </footer>
   );

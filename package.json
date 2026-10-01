@@ -2,7 +2,7 @@
   "name": "blog-tree",
   "version": "1.0.0",
   "private": true,
-  "homepage": "https://blog-tree.github.io",
+  "homepage": "https://zagovorichev.github.io",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

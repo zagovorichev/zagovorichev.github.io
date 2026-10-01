@@ -1,7 +1,7 @@
-# blog-tree.github.io
+# Blog-Tree
 Software Developer's Log
 
-[https://blog-tree.github.io/](https://blog-tree.github.io/)
+[https://zagovorichev.github.io/](https://zagovorichev.github.io/)
 
 Built with [Next.js](https://nextjs.org/) (static export) and MDX, hosted on GitHub Pages.
 
@@ -42,6 +42,8 @@ npm run build      # static site in ./out
 
 ## Deploy
 
-`.github/workflows/deploy.yml` builds every push and pull request; pushes to `main` are built and
-published to the `gh-pages` branch, which GitHub Pages serves (**Settings → Pages → Deploy from a branch → gh-pages**).
-No manual `npm run deploy` is needed anymore.
+`.github/workflows/deploy.yml` builds every push and pull request; pushes to `main` are published to GitHub Pages
+(**Settings → Pages → Build and deployment → Source: GitHub Actions**).
+
+Google Analytics is optional: set the repository variable `GA_ID` (Settings → Secrets and variables → Actions → Variables)
+to a `G-XXXXXXXXXX` measurement ID and redeploy.
