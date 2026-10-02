@@ -198,6 +198,7 @@ main {
   position: sticky;
   top: 0;
   z-index: 50;
+  view-transition-name: site-header;
   height: var(--header-h);
   background: color-mix(in srgb, var(--bg) 82%, transparent);
   backdrop-filter: saturate(180%) blur(14px);
@@ -1656,10 +1657,68 @@ a.card:hover,
   }
 }
 
+/* ==========================================================================
+   View transitions (React <ViewTransition>, run by Next.js on client-side navigation)
+   ========================================================================== */
+
+/* Page content: the old page fades out fast, the new one fades in and rises slightly */
+::view-transition-old(.page-fade) {
+  animation: 120ms ease-out both vt-fade-out;
+}
+
+::view-transition-new(.page-fade) {
+  animation: 240ms ease-out 80ms both vt-rise-in;
+}
+
+/* Guide icon tile: card <-> article header */
+::view-transition-group(.morph) {
+  animation-duration: 380ms;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* The header is the fixed reference point: no animation, drawn above the moving content */
+::view-transition-group(site-header) {
+  z-index: 100;
+  animation: none;
+}
+
+::view-transition-old(site-header) {
+  display: none;
+}
+
+::view-transition-new(site-header) {
+  animation: none;
+}
+
+/* Clicks during a transition reach the new page */
+::view-transition {
+  pointer-events: none;
+}
+
+@keyframes vt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     transition: none !important;
+  }
+
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
   }
 }

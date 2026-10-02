@@ -1,3 +1,4 @@
+import {ViewTransition} from 'react';
 import type {Metadata, Viewport} from 'next';
 import {Inter, JetBrains_Mono} from 'next/font/google';
 import {GoogleAnalytics} from '@next/third-parties/google';
@@ -40,7 +41,10 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
           Skip to content
         </a>
         <Header />
-        <main id="main">{children}</main>
+        <main id="main">
+          {/* page content crossfades on navigation; the header stays put (see "View transitions" in globals.css) */}
+          <ViewTransition default="page-fade">{children}</ViewTransition>
+        </main>
         <Footer />
         {site.gaId && <GoogleAnalytics gaId={site.gaId} />}
       </body>

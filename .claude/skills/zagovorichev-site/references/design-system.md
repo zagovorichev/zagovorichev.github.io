@@ -58,6 +58,16 @@ Other tokens: `--radius` 14px (cards), `--radius-sm` 9px, `--max` 1160px content
 (saved choice in `localStorage.theme`, else system preference). Dark values live under
 `:root[data-theme='dark']`. Any new token needs both a light and a dark value.
 
+## View transitions
+
+Client-side navigation animates through React `<ViewTransition>` (works in Next.js 16 without config;
+browsers without support just switch pages). `app/layout.tsx` wraps page content with class `page-fade`
+(old page fades out, new one fades in and rises 8px); the site header has `view-transition-name:
+site-header` and never animates. Shared elements morph when both pages render a `<ViewTransition>` with the
+same `name` plus `share="morph" default="none"` — currently the guide icon tile (`guideIconTransition(slug)`
+in `components/cards.tsx`, used by the card and `PostLayout`). A name must be unique on a page. CSS lives in
+the "View transitions" block of `globals.css`; `prefers-reduced-motion` turns the animations off.
+
 ## Typography
 
 Inter for everything, JetBrains Mono for code. Headings: tight letter-spacing (-0.02…-0.035em),

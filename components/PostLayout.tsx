@@ -1,7 +1,9 @@
+import {ViewTransition} from 'react';
 import Link from 'next/link';
 import {ArrowLeft, Calendar, Clock} from 'lucide-react';
 import {SectionTile, TopicIcon} from './icons';
 import Toc from './Toc';
+import {guideIconTransition} from './cards';
 import {formatDate, type Post} from '@/lib/content';
 import type {TocItem} from '@/lib/mdx';
 import {sections, type SectionKey} from '@/lib/site';
@@ -26,9 +28,11 @@ export default function PostLayout({
       </Link>
       <header className="post-header">
         {section === 'guides' ? (
-          <span className="topic-tile topic-tile-lg">
-            <TopicIcon name={post.icon} size={28} />
-          </span>
+          <ViewTransition name={guideIconTransition(post.slug)} share="morph" default="none">
+            <span className="topic-tile topic-tile-lg">
+              <TopicIcon name={post.icon} size={28} />
+            </span>
+          </ViewTransition>
         ) : (
           <SectionTile section={section} size="lg" />
         )}

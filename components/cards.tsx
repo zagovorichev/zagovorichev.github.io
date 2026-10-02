@@ -1,14 +1,20 @@
+import {ViewTransition} from 'react';
 import Link from 'next/link';
 import {ArrowRight, ArrowUpRight, Clock, Play} from 'lucide-react';
 import {TopicIcon} from './icons';
 import {formatDate, type ClaudeKind, type LinkItem, type PostMeta, type Video} from '@/lib/content';
 
+/** Shared by the guide card and the guide page header: on navigation the icon tile morphs between them. */
+export const guideIconTransition = (slug: string) => `guide-icon-${slug}`;
+
 export function GuideCard({guide}: {guide: PostMeta}) {
   return (
     <Link href={`/guides/${guide.slug}/`} className="card guide-card" data-section="guides">
-      <span className="topic-tile">
-        <TopicIcon name={guide.icon} />
-      </span>
+      <ViewTransition name={guideIconTransition(guide.slug)} share="morph" default="none">
+        <span className="topic-tile">
+          <TopicIcon name={guide.icon} />
+        </span>
+      </ViewTransition>
       <h3>{guide.title}</h3>
       <p className="muted clamp-3">{guide.description}</p>
       <div className="card-meta">
