@@ -23,9 +23,10 @@ export async function generateMetadata({params}: Props): Promise<Metadata> {
 
 export default async function GuidePage({params}: Props) {
   const g = getGuide((await params).slug);
+  const {content, toc} = await renderMdx(g.source);
   return (
-    <PostLayout section="guides" post={g}>
-      {await renderMdx(g.source)}
+    <PostLayout section="guides" post={g} toc={toc}>
+      {content}
     </PostLayout>
   );
 }

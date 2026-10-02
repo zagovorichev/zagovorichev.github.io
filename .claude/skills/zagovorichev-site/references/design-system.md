@@ -14,6 +14,8 @@ cards with subtle borders, crisp hand-made SVG. Light and dark themes are equal 
 | Cards (guide, news, video, link) | `components/cards.tsx` |
 | Page title block | `components/PageHeader.tsx` |
 | Guide/news article layout | `components/PostLayout.tsx` |
+| Table of contents (≥3 h2/h3; sticky column ≥1200px, collapsible block below) | `components/Toc.tsx`, headings collected in `lib/mdx.tsx` |
+| Code block with Copy button (MDX `pre`) | `components/CodeBlock.tsx` |
 | Logo, section icons, hero art, GitHub mark, topic icons | `components/icons.tsx` |
 | Favicon | `app/icon.svg` (same drawing as `LogoMark`, fixed brand color) |
 | MDX element overrides | `components/mdx-components.tsx` |

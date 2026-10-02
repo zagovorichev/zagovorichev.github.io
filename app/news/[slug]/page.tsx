@@ -23,9 +23,10 @@ export async function generateMetadata({params}: Props): Promise<Metadata> {
 
 export default async function NewsPostPage({params}: Props) {
   const g = getNewsPost((await params).slug);
+  const {content, toc} = await renderMdx(g.source);
   return (
-    <PostLayout section="news" post={g}>
-      {await renderMdx(g.source)}
+    <PostLayout section="news" post={g} toc={toc}>
+      {content}
     </PostLayout>
   );
 }
