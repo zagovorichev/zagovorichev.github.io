@@ -1320,6 +1320,48 @@ a.card:hover,
   font-family: var(--font-code);
 }
 
+.code-block {
+  position: relative;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font: 500 0.78rem/1.4 var(--font-body);
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 0.15s,
+    color 0.15s,
+    border-color 0.15s;
+}
+
+.code-block:hover .copy-btn,
+.copy-btn:focus-visible {
+  opacity: 1;
+}
+
+.copy-btn:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+/* Touch screens have no hover: keep the button visible */
+@media (hover: none) {
+  .copy-btn {
+    opacity: 1;
+  }
+}
+
 /* rehype-pretty-code dual theme */
 .prose code[data-theme] span {
   color: var(--shiki-light);

@@ -2,6 +2,7 @@ import type {ComponentPropsWithoutRef} from 'react';
 import type {MDXComponents} from 'mdx/types';
 import Link from 'next/link';
 import ZoomImage from './ZoomImage';
+import CodeBlock from './CodeBlock';
 import {explicitArchitectureDiagrams} from './diagrams/ExplicitArchitecture';
 
 /** Secondary explanatory text, e.g. `- Term. <Muted>explanation</Muted>` */
@@ -32,6 +33,7 @@ function Diagram({name}: {name: keyof typeof diagrams}) {
 export const mdxComponents: MDXComponents = {
   a: Anchor,
   img: Img,
+  pre: CodeBlock,
   Muted,
   Diagram,
 };

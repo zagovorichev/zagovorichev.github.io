@@ -12,3 +12,6 @@ Quick map:
 - Before pushing: `bash .claude/skills/zagovorichev-site/scripts/verify.sh`
 
 Never invent Oleksandr's opinions, notes or biography — ask him.
+
+Git workflow (Oleksandr's rule): commit straight to `main`, one commit per task, each verified before push.
+If a branch is used anyway, merge it into `main` and delete it (remote and local) right after.
