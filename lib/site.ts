@@ -8,7 +8,7 @@ export const site = {
   url: 'https://zagovorichev.github.io',
   repo: 'https://github.com/zagovorichev/zagovorichev.github.io',
   github: 'https://github.com/zagovorichev',
-  // Google Analytics is enabled only when the GA_ID repository variable is set (see README)
+  // Google Analytics: the measurement ID is passed only by the deploy workflow, so local builds don't track
   gaId: process.env.NEXT_PUBLIC_GA_ID,
 };
 

@@ -24,5 +24,6 @@ npm run build      # static site in ./out
 `.github/workflows/deploy.yml` builds every push and pull request; pushes to `main` are published to GitHub Pages
 (**Settings → Pages → Build and deployment → Source: GitHub Actions**).
 
-Google Analytics is optional: set the repository variable `GA_ID` (Settings → Secrets and variables → Actions → Variables)
-to a `G-XXXXXXXXXX` measurement ID and redeploy.
+Google Analytics 4 (`G-C8QBZ9ZLSZ`) is switched on only in the deploy workflow, so local builds send no hits.
+To use another property, set the repository variable `GA_ID` (Settings → Secrets and variables → Actions → Variables)
+and redeploy.

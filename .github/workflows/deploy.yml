@@ -22,7 +22,9 @@ jobs:
       - run: npm run lint
       - run: npm run build
         env:
-          NEXT_PUBLIC_GA_ID: ${{ vars.GA_ID }}
+          # Google Analytics 4 measurement ID (public, not a secret). Set only here, so local
+          # builds and previews never send hits; the GA_ID repository variable can override it.
+          NEXT_PUBLIC_GA_ID: ${{ vars.GA_ID || 'G-C8QBZ9ZLSZ' }}
       - if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v4
         with:

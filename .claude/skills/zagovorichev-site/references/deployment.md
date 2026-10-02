@@ -7,7 +7,8 @@
 - **On every push and pull request:** `npm ci` → `npm run lint` → `npm run build` (static site in `out/`).
 - **On push to `main` only:** upload `out/` as a Pages artifact → `actions/deploy-pages` publishes it.
   Takes ~1 minute. PRs only build (a free check that nothing is broken).
-- Node 22. Build-time env: `NEXT_PUBLIC_GA_ID` ← repository variable `GA_ID`.
+- Node 22. Build-time env: `NEXT_PUBLIC_GA_ID` ← repository variable `GA_ID`, default `G-C8QBZ9ZLSZ`
+  (set in the workflow only, so local builds never send analytics hits).
 
 No manual deploy step exists or is needed. Nothing is served by a server: no API routes, no ISR,
 no middleware, no `next/image` optimization (`images.unoptimized`), `trailingSlash: true`
@@ -19,8 +20,10 @@ no middleware, no `next/image` optimization (`images.unoptimized`), `trailingSla
   GitHub also runs its own Jekyll "pages build and deployment" on each push, which races with ours and can
   publish the raw repository (README instead of the site). Symptom: a second workflow named
   "pages build and deployment" in the Actions list.
-- Optional Google Analytics: **Settings → Secrets and variables → Actions → Variables → `GA_ID`**
-  = `G-XXXXXXXXXX`, then re-run the workflow. Without it, no analytics script is included.
+- Google Analytics 4: property for zagovorichev.github.io, measurement ID `G-C8QBZ9ZLSZ` (default in the
+  workflow). To switch property, set **Settings → Secrets and variables → Actions → Variables → `GA_ID`** and
+  re-run the workflow. In GA, the web stream's Enhanced measurement must keep "Page changes based on browser
+  history events" on — client-side navigation between pages is counted only through it.
 
 ## Checking a deployment
 
