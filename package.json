@@ -25,6 +25,7 @@
     "shiki": "^4.5.0"
   },
   "devDependencies": {
+    "@fontsource/inter": "^5.3.0",
     "@types/js-yaml": "^4.0.9",
     "@types/mdx": "^2.0.14",
     "@types/node": "^22.20.4",

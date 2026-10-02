@@ -16,6 +16,7 @@ cards with subtle borders, crisp hand-made SVG. Light and dark themes are equal 
 | Guide/news article layout | `components/PostLayout.tsx` |
 | Table of contents (≥3 h2/h3; sticky column ≥1200px, collapsible block below) | `components/Toc.tsx`, headings collected in `lib/mdx.tsx` |
 | Code block with Copy button (MDX `pre`) | `components/CodeBlock.tsx` |
+| Link-preview images (Open Graph, 1200×630, dark theme, section accent) | `lib/og.tsx`; served by `app/og.png/route.tsx` (site default) and `app/<section>/[slug]/og.png/route.tsx`, wired via `ogImageMeta()` in `generateMetadata` |
 | Logo, section icons, hero art, GitHub mark, topic icons | `components/icons.tsx` |
 | Favicon | `app/icon.svg` (same drawing as `LogoMark`, fixed brand color) |
 | MDX element overrides | `components/mdx-components.tsx` |

@@ -4,6 +4,7 @@ import {Inter, JetBrains_Mono} from 'next/font/google';
 import {GoogleAnalytics} from '@next/third-parties/google';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import {ogImageMeta} from '@/lib/og';
 import {site} from '@/lib/site';
 import './globals.css';
 
@@ -15,7 +16,9 @@ export const metadata: Metadata = {
   title: {default: `${site.name} — ${site.tagline}`, template: `%s · ${site.name}`},
   description: site.description,
   authors: [{name: site.name, url: site.github}],
-  openGraph: {siteName: site.name, type: 'website', locale: 'en_US'},
+  openGraph: {siteName: site.name, type: 'website', locale: 'en_US', images: ogImageMeta('/og.png')},
+  // X falls back to og:image; this makes it a large preview
+  twitter: {card: 'summary_large_image'},
   alternates: {types: {'application/rss+xml': '/feed.xml'}},
 };
 
