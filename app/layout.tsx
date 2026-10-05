@@ -1,9 +1,9 @@
 import {ViewTransition} from 'react';
 import type {Metadata, Viewport} from 'next';
 import {Inter, JetBrains_Mono} from 'next/font/google';
-import {GoogleAnalytics} from '@next/third-parties/google';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import CookieConsent from '@/components/CookieConsent';
 import {ogImageMeta} from '@/lib/og';
 import {site} from '@/lib/site';
 import './globals.css';
@@ -30,8 +30,9 @@ export const viewport: Viewport = {
 };
 
 // Runs before paint: pick the saved theme or the system one (no flash of the wrong theme),
+// set Google consent defaults (everything denied unless the visitor allowed analytics, see CookieConsent),
 // and send old hash-router links (/#/article/qa) to the guide pages.
-const bootScript = `(function(){try{var t=localStorage.getItem('theme');if(!t)t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=t}catch(e){}var h=location.hash;if(h.indexOf('#/article/')===0){var s=h.slice(10).replace(/\\/$/,'');location.replace(s==='freelance'?'/links/':'/guides/'+s+'/')}})();`;
+const bootScript = `(function(){window.dataLayer=window.dataLayer||[];function g(){dataLayer.push(arguments)}var c='denied';try{if(localStorage.getItem('consent')==='granted')c='granted'}catch(e){}g('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:c});try{var t=localStorage.getItem('theme');if(!t)t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=t}catch(e){}var h=location.hash;if(h.indexOf('#/article/')===0){var s=h.slice(10).replace(/\\/$/,'');location.replace(s==='freelance'?'/links/':'/guides/'+s+'/')}})();`;
 
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
@@ -49,7 +50,7 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
           <ViewTransition default="page-fade">{children}</ViewTransition>
         </main>
         <Footer />
-        {site.gaId && <GoogleAnalytics gaId={site.gaId} />}
+        {site.gaId && <CookieConsent gaId={site.gaId} />}
       </body>
     </html>
   );

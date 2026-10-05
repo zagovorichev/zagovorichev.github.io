@@ -26,4 +26,5 @@ npm run build      # static site in ./out
 
 Google Analytics 4 (`G-C8QBZ9ZLSZ`) is switched on only in the deploy workflow, so local builds send no hits.
 To use another property, set the repository variable `GA_ID` (Settings → Secrets and variables → Actions → Variables)
-and redeploy.
+and redeploy. GA loads only after the visitor clicks **Allow** in the cookie banner
+(`components/CookieConsent.tsx`, Google Consent Mode v2 with everything denied by default).

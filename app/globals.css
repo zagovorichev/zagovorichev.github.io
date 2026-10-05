@@ -1641,6 +1641,49 @@ a.card:hover,
   font-size: 0.85rem;
 }
 
+.link-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.link-btn:hover {
+  color: var(--text);
+}
+
+/* Cookie consent banner (components/CookieConsent.tsx) */
+.consent {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  z-index: 60;
+  width: min(440px, calc(100vw - 32px));
+  padding: 18px 20px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.consent b {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.consent-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
 @media (max-width: 760px) {
   .footer-grid {
     grid-template-columns: 1fr 1fr;
@@ -1654,6 +1697,16 @@ a.card:hover,
 @media (max-width: 560px) {
   .container {
     padding: 0 16px;
+  }
+
+  .consent {
+    left: 16px;
+    bottom: 16px;
+  }
+
+  .consent-actions .btn {
+    flex: 1;
+    justify-content: center;
   }
 }
 

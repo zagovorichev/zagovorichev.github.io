@@ -24,6 +24,10 @@ no middleware, no `next/image` optimization (`images.unoptimized`), `trailingSla
   workflow). To switch property, set **Settings → Secrets and variables → Actions → Variables → `GA_ID`** and
   re-run the workflow. In GA, the web stream's Enhanced measurement must keep "Page changes based on browser
   history events" on — client-side navigation between pages is counted only through it.
+- Cookie consent: `components/CookieConsent.tsx` shows a banner (Allow / Decline, choice in
+  `localStorage.consent`; "Cookie settings" in the footer reopens it). The GA script is loaded only after
+  Allow; the boot script in `app/layout.tsx` sets Consent Mode v2 defaults (ads denied, analytics denied
+  unless allowed) before anything else runs. Without `NEXT_PUBLIC_GA_ID` neither banner nor link render.
 
 ## Checking a deployment
 

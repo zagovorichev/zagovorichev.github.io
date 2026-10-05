@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import {Rss} from 'lucide-react';
 import {GitHubMark, LogoMark} from './icons';
+import {CookieSettingsLink} from './CookieConsent';
 import {navOrder, sections, site} from '@/lib/site';
 
 export default function Footer() {
@@ -39,7 +40,15 @@ export default function Footer() {
         <span>
           © {new Date().getFullYear()} {site.name}
         </span>
-        <span>Built with Next.js · Hosted on GitHub Pages</span>
+        <span>
+          Built with Next.js · Hosted on GitHub Pages
+          {site.gaId && (
+            <>
+              {' · '}
+              <CookieSettingsLink />
+            </>
+          )}
+        </span>
       </div>
     </footer>
   );
